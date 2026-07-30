@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PDF Export Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #2a2a2a;
+            padding: 30px;
+            border-radius: 10px;
+        }
+        button {
+            background: #d4af37;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #f0c040;
+        }
+        .report-data {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 12px;
+            overflow-x: auto;
+        }
+        h1 { color: #d4af37; }
+        h2 { color: #f0c040; margin-top: 30px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📄 PDF Export Test - Jewellery ERP</h1>
+        <p>This page tests the PDF export functionality with sample report data.</p>
+
+        <h2>Test Cases</h2>
+
+        <button onclick="testSalesReport()">📊 Sales Report PDF</button>
+        <button onclick="testProfitReport()">💰 Profit Report PDF</button>
+        <button onclick="testGSTReport()">📈 GST Report PDF</button>
+        <button onclick="testEmptyReport()">⚠️ Empty Report PDF</button>
+
+        <h2>Sample Data</h2>
+        <div id="output" class="report-data">
+            Click a button above to generate a test PDF...
+        </div>
+    </div>
+
+    <script>
+        const COMPANY_NAME = 'JEWELLERY ERP';
+
+        function exportReportToPDF(reportData, reportTitle, dateRange) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            let yPosition = 20;
+
+            // Company Header
+            doc.setFontSize(20);
+            doc.setTextColor(212, 175, 55);
+            doc.text(COMPANY_NAME, 14, yPosition);
+            yPosition += 10;
+
+            // Report Title
+            doc.setFontSize(14);
+            doc.setTextColor(60, 60, 60);
+            doc.text(reportTitle, 14, yPosition);
+            yPosition += 8;
+
+            // Date Range
+            if (dateRange) {
+                doc.setFontSize(10);
+                doc.setTextColor(100, 100, 100);
+                const rangeText = dateRange.start && dateRange.end 
+                    ? `Period: ${dateRange.start} to ${dateRange.end}`
+                    : 'Period: All Time';
+                doc.text(rangeText, 14, yPosition);
+                yPosition += 6;
+            }
+
+            // Generation Timestamp
+            doc.setFontSize(9);
+            doc.setTextColor(150, 150, 150);
+            doc.text(`Generated: ${new Date().toLocaleString()}`, 14, yPosition);
+            yPosition += 12;
+
+            // Summary Section
+            doc.setFontSize(12);
+            doc.setTextColor(40, 40, 40);
+            doc.text('Summary', 14, yPosition);
+            yPosition += 8;
+
+            // Prepare summary data
+            const summaryData = [];
+            
+            Object.entries(reportData).forEach(([key, value]) => {
+                if (key === 'chart' || key === 'data') return;
+                
+                const formattedKey = key
+                    .split('_')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ');
+                
+                let formattedValue = String(value);
+                if (typeof value === 'number') {
+                    if (key.includes('sales') || key.includes('purchase') || 
+                        key.includes('profit') || key.includes('gst') || 
+                        key.includes('expense') || key.includes('taxable') ||
+                        key.includes('payable') || key.includes('receivable') ||
+                        key.includes('cogs')) {
+                        formattedValue = `₹ ${value.toLocaleString('en-IN', { 
+                            minimumFractionDigits: 2, 
+                            maximumFractionDigits: 2 
+                        })}`;
+                    } else if (key.includes('weight')) {
+                        formattedValue = `${value.toFixed(3)} g`;
+                    } else if (key.includes('margin') || key.includes('percent')) {
+                        formattedValue = `${value.toFixed(2)}%`;
+                    } else {
+                        formattedValue = value.toLocaleString('en-IN');
+                    }
+                }
+                
+                summaryData.push([formattedKey, formattedValue]);
+            });
+
+            if (summaryData.length === 0) {
+                doc.setFontSize(10);
+                doc.setTextColor(150, 150, 150);
+                doc.text('No data available for the selected period', 14, yPosition);
+            } else {
+                doc.autoTable({
+                    head: [['Metric', 'Value']],
+                    body: summaryData,
+                    startY: yPosition,
+                    styles: { fontSize: 10, cellPadding: 5 },
+                    headStyles: { 
+                        fillColor: [20, 20, 20], 
+                        textColor: [212, 175, 55],
+                        fontStyle: 'bold'
+                    },
+                    alternateRowStyles: { fillColor: [250, 250, 250] },
+                    columnStyles: {
+                        0: { cellWidth: 80, fontStyle: 'bold' },
+                        1: { cellWidth: 100, halign: 'right' }
+                    }
+                });
+            }
+
+            // Footer
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(150, 150, 150);
+                doc.text(
+                    `Page ${i} of ${pageCount}`,
+                    doc.internal.pageSize.width / 2,
+                    doc.internal.pageSize.height - 10,
+                    { align: 'center' }
+                );
+            }
+
+            // Save
+            const timestamp = new Date().toISOString().split('T')[0];
+            doc.save(`${reportTitle.replace(/\\s+/g, '_')}_${timestamp}.pdf`);
+        }
+
+        function testSalesReport() {
+            const data = {
+                total_sales: 7604482.00,
+                total_taxable: 7382991.60,
+                total_gst: 221489.75,
+                total_cgst: 110744.88,
+                total_sgst: 110744.88,
+                total_igst: 0.0,
+                output_gst: 221489.75,
+                total_discount: 0.0,
+                invoice_count: 5
+            };
+
+            document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+            
+            exportReportToPDF(
+                data, 
+                'Sales Report',
+                { start: '2024-01-01', end: '2024-01-31' }
+            );
+        }
+
+        function testProfitReport() {
+            const data = {
+                sales: 7382991.60,
+                cogs: 856408.00,
+                gross_profit: 6526583.60,
+                expenses: 0.00,
+                net_profit: 6526583.60,
+                gross_profit_margin: 88.40,
+                net_profit_margin: 88.40
+            };
+
+            document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+            
+            exportReportToPDF(
+                data, 
+                'Profit Report',
+                { start: '2024-01-01', end: '2024-01-31' }
+            );
+        }
+
+        function testGSTReport() {
+            const data = {
+                output_gst: 221489.75,
+                output_cgst: 110744.88,
+                output_sgst: 110744.88,
+                output_igst: 0.0,
+                input_gst: 25842.24,
+                input_cgst: 12921.12,
+                input_sgst: 12921.12,
+                input_igst: 0.0,
+                net_gst_payable: 195647.51
+            };
+
+            document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+            
+            exportReportToPDF(
+                data, 
+                'GST Report',
+                { start: '2024-01-01', end: '2024-01-31' }
+            );
+        }
+
+        function testEmptyReport() {
+            const data = {
+                total_sales: 0,
+                total_taxable: 0,
+                invoice_count: 0
+            };
+
+            document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+            
+            exportReportToPDF(
+                data, 
+                'Empty Sales Report',
+                { start: '2024-02-01', end: '2024-02-28' }
+            );
+        }
+    </script>
+</body>
+</html>
