@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
 from datetime import datetime
 from app.models.invoice import InvoiceStatus
@@ -43,7 +43,9 @@ class InvoiceResponse(BaseModel):
     invoice_number: str
     customer_id: int
     invoice_date: datetime
+    subtotal: float
+    tax_amount: float
+    discount_amount: float
     grand_total: float
     status: InvoiceStatus
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

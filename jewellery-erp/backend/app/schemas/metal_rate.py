@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
 from datetime import datetime
 
@@ -12,8 +12,7 @@ class PurityResponse(BaseModel):
     karat_name: str
     percentage: float
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class MetalRateResponse(BaseModel):
     id: int
@@ -22,8 +21,7 @@ class MetalRateResponse(BaseModel):
     effective_datetime: datetime
     purity: Optional[PurityResponse] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class RateHistoryResponse(BaseModel):
     purity: PurityResponse

@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
 
 # Sub-Schemas
@@ -8,7 +8,7 @@ class CategoryBase(BaseModel):
 
 class CategoryResponse(CategoryBase):
     id: int
-    class Config: from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class DesignBase(BaseModel):
     name: str
@@ -17,7 +17,7 @@ class DesignBase(BaseModel):
 
 class DesignResponse(DesignBase):
     id: int
-    class Config: from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class StoneBase(BaseModel):
     name: str
@@ -26,7 +26,7 @@ class StoneBase(BaseModel):
 
 class StoneResponse(StoneBase):
     id: int
-    class Config: from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class ImageCreate(BaseModel):
     image_url: str
@@ -34,7 +34,7 @@ class ImageCreate(BaseModel):
 
 class ImageResponse(ImageCreate):
     id: int
-    class Config: from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class VariantStoneCreate(BaseModel):
     stone_id: int
@@ -44,7 +44,7 @@ class VariantStoneCreate(BaseModel):
 class VariantStoneResponse(VariantStoneCreate):
     id: int
     stone: StoneResponse
-    class Config: from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class VariantCreate(BaseModel):
     purity_id: int
@@ -60,7 +60,7 @@ class VariantResponse(BaseModel):
     size: Optional[str]
     making_charge_type: Optional[str]
     stones: List[VariantStoneResponse] = []
-    class Config: from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Main Product Schema
 class ProductCreate(BaseModel):
@@ -83,7 +83,7 @@ class ProductResponse(BaseModel):
     description: Optional[str]
     images: List[ImageResponse] = []
     variants: List[VariantResponse] = []
-    class Config: from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class ProductListResponse(BaseModel):
     total: int

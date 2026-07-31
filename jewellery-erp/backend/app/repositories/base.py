@@ -1,7 +1,8 @@
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from sqlalchemy import select, asc, desc
+from sqlalchemy import select, asc, desc, exc
+from fastapi import HTTPException
 
 ModelType = TypeVar("ModelType")
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
@@ -59,7 +60,9 @@ class BaseRepository(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return db_obj
 
     def remove(self, db: Session, *, id: int) -> ModelType:
-        obj = db.query(self.model).get(id)
+        obj = db.get(self.model, id)
+        if obj is None:
+            raise HTTPException(status_code=404, detail=f"{self.model.__name__} not found")
         db.delete(obj)
         db.commit()
         return obj

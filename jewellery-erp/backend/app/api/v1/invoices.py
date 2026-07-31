@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from decimal import Decimal
-from datetime import date
+from datetime import date, datetime
 
 from app.api.dependencies import get_db, get_current_user
 from app.models.user import User
@@ -13,7 +13,7 @@ from app.models.silver_calculation import SilverCalculation
 from app.models.gold_rate import GoldRate
 from app.models.silver_rate import SilverRate
 from app.models.customer import Customer
-from app.schemas.invoice import InvoiceCreate, InvoiceResponse
+from app.schemas.invoice import InvoiceCreate, InvoiceResponse, GoldCalcCreate, SilverCalcCreate
 from app.services.calculation_service import CalculationService
 from app.services.invoice_pdf_service import InvoicePDFService
 
@@ -24,7 +24,6 @@ def generate_invoice_number(db: Session) -> str:
     Generate unique invoice number.
     Format: INV-YYYYMMDD-XXXX
     """
-    from datetime import datetime
     today = datetime.now().strftime('%Y%m%d')
     
     # Count invoices created today
@@ -39,8 +38,33 @@ def create_invoice(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    # 1. Validate customer exists
+    customer = db.query(Customer).filter(Customer.id == invoice_in.customer_id).first()
+    if not customer:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Customer with id {invoice_in.customer_id} not found"
+        )
+    
+    # 2. Validate tax calculation
+    calculated_subtotal = sum(item.final_price for item in invoice_in.items)
+    calculated_grand_total = calculated_subtotal + invoice_in.tax_amount - invoice_in.discount_amount
+    
+    # Allow small floating point differences (< 0.01)
+    if abs(calculated_subtotal - invoice_in.subtotal) > 0.01:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid subtotal: expected {calculated_subtotal:.2f}, got {invoice_in.subtotal:.2f}"
+        )
+    
+    if abs(calculated_grand_total - invoice_in.grand_total) > 0.01:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid grand_total: expected {calculated_grand_total:.2f}, got {invoice_in.grand_total:.2f}"
+        )
+    
     try:
-        # 1. Create Invoice
+        # 3. Create Invoice
         db_invoice = Invoice(
             customer_id=invoice_in.customer_id,
             invoice_number=generate_invoice_number(db),
@@ -54,7 +78,7 @@ def create_invoice(
         db.add(db_invoice)
         db.flush() # Get ID
         
-        # 2. Create Items
+        # 4. Create Items
         for item_in in invoice_in.items:
             db_item = InvoiceItem(
                 invoice_id=db_invoice.id,
@@ -66,9 +90,28 @@ def create_invoice(
             db.add(db_item)
             db.flush()
             
-            # 3. Create Specific Calculations using CalculationService
+            # 5. Create Specific Calculations using CalculationService
             if item_in.gold_calculation:
                 calc_in = item_in.gold_calculation
+                
+                # Validate gold calculation fields
+                if calc_in.gross_weight <= 0:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Gross weight must be positive"
+                    )
+                if calc_in.net_weight <= 0:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Net weight must be positive"
+                    )
+                if calc_in.net_weight > calc_in.gross_weight:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Net weight cannot exceed gross weight"
+                    )
+                if calc_in.stone_weight < 0:
+                    calc_in.stone_weight = 0.0
                 
                 # Fetch latest gold rate
                 latest_gold_rate = (
@@ -102,12 +145,29 @@ def create_invoice(
                     net_weight=calc_in.net_weight,
                     making_charges_amount=float(calc_result['making_charge']),
                     hallmark_charges=calc_in.hallmark_charges,
-                    total_gold_value=float(calc_result['grand_total'])
+                    total_gold_value=float(calc_result['metal_value'])
                 )
                 db.add(db_gold)
                 
             elif item_in.silver_calculation:
                 calc_in = item_in.silver_calculation
+                
+                # Validate silver calculation fields
+                if calc_in.gross_weight <= 0:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Gross weight must be positive"
+                    )
+                if calc_in.net_weight <= 0:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Net weight must be positive"
+                    )
+                if calc_in.net_weight > calc_in.gross_weight:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Net weight cannot exceed gross weight"
+                    )
                 
                 # Fetch latest silver rate
                 latest_silver_rate = (
@@ -146,11 +206,11 @@ def create_invoice(
                     tanch_percentage=tanch_percentage,
                     pure_weight=pure_weight,
                     making_charges_amount=float(calc_result['making_charge']),
-                    total_silver_value=float(calc_result['grand_total'])
+                    total_silver_value=float(calc_result['metal_value'])
                 )
                 db.add(db_silver)
             
-            # 4. Mark StockItem as Sold if this was a scanned item
+            # 6. Mark StockItem as Sold if this was a scanned item
             if hasattr(item_in, 'stock_item_id') and item_in.stock_item_id:
                 from app.models.stock_item import StockItem
                 stock_item = db.query(StockItem).filter(StockItem.id == item_in.stock_item_id).first()
@@ -161,9 +221,12 @@ def create_invoice(
         db.refresh(db_invoice)
         return db_invoice
         
+    except HTTPException:
+        db.rollback()
+        raise
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 @router.get("/", response_model=List[InvoiceResponse])
 def list_invoices(

@@ -9,7 +9,7 @@ def write_file(path, content):
         f.write(content.strip() + "\n")
 
 c_config = '''
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Jewellery ERP API"
@@ -18,8 +18,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7 # 7 days
     
-    class Config:
-        case_sensitive = True
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
 settings = Settings()
 '''
@@ -61,36 +60,14 @@ def create_refresh_token(subject: Union[str, Any], expires_delta: Optional[timed
 '''
 
 c_schemas_auth = '''
-from pydantic import BaseModel
-
-class Token(BaseModel):
-    access_token: str
-    refresh_token: str
-    token_type: str = "bearer"
-
-class TokenPayload(BaseModel):
-    sub: str | None = None
-    exp: int | None = None
-    type: str | None = None
-
-class LoginRequest(BaseModel):
-    username: str
-    password: str
-
-class RefreshTokenRequest(BaseModel):
-    refresh_token: str
-'''
-
-c_schemas_user = '''
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import List, Optional
 
 class RoleResponse(BaseModel):
     name: str
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class UserResponse(BaseModel):
     id: int
@@ -100,8 +77,7 @@ class UserResponse(BaseModel):
     roles: List[RoleResponse] = []
     created_at: datetime
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 '''
 
 c_deps = '''

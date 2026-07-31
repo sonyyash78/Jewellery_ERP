@@ -1,14 +1,25 @@
 """Seed default Admin role and admin user.
-
-Import app.main first so every SQLAlchemy mapper is registered.
+Run this directly: python -m app.db.seed
 """
-from app.main import app  # noqa: F401 — registers all models
+import sys
+import os
+
+# Add backend directory to path
+backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
+
+# Import what we need directly - avoiding circular imports
 from app.db.database import SessionLocal
 from app.models.user import User, Role
 from app.core.security import get_password_hash, verify_password
 
 
 def seed_db():
+    """Create Admin role and admin user if they don't exist.
+    
+    This function is idempotent - running it multiple times won't create duplicates.
+    """
     db = SessionLocal()
     try:
         admin_role = db.query(Role).filter(Role.name == "Admin").first()
