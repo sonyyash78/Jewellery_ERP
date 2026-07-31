@@ -24,7 +24,7 @@ class Customer(Base):
 
     bills = relationship("Bill", back_populates="customer")
     invoices = relationship("Invoice", back_populates="customer")
-    exchanges = relationship("Exchange", back_populates="customer", foreign_keys="Exchange.customer_id")
+    exchanges = relationship("Exchange", back_populates="customer")
 
 class Supplier(Base):
     __tablename__ = "suppliers"

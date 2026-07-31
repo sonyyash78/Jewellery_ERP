@@ -30,37 +30,31 @@ export default function Dashboard() {
   return (
     <div className="space-y-6 pb-10">
       {/* Top Metrics Row */}
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-pulse">
-          {[1,2,3,4].map(i => <div key={i} className="h-32 bg-surface rounded-xl border border-gray-800"></div>)}
-        </div>
-      ) : metrics ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard 
-            title="Today's Sales" 
-            value={formatCurrency(metrics.today_sales)} 
-            icon={<IndianRupee size={24} />} 
-            subtitle={`${metrics.today_bills} Bills generated`}
-            trend="up"
-          />
-          <StatCard 
-            title="Today's Purchases" 
-            value={formatCurrency(metrics.today_purchases)} 
-            icon={<ShoppingBag size={24} />} 
-          />
-          <StatCard 
-            title="Today's Profit" 
-            value={formatCurrency(metrics.today_profit)} 
-            icon={<TrendingUp size={24} />} 
-            trend={metrics.today_profit >= 0 ? 'up' : 'down'}
-          />
-          <StatCard 
-            title="Total Customers" 
-            value={metrics.total_customers.toLocaleString()} 
-            icon={<Users size={24} />} 
-          />
-        </div>
-      ) : null}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard 
+          title="Today's Sales" 
+          value={loading || !metrics ? '…' : formatCurrency(metrics.today_sales)} 
+          icon={<IndianRupee size={24} />} 
+          subtitle={metrics ? `${metrics.today_bills} Bills generated` : undefined}
+          trend={metrics ? "up" : undefined}
+        />
+        <StatCard 
+          title="Today's Purchases" 
+          value={loading || !metrics ? '…' : formatCurrency(metrics.today_purchases)} 
+          icon={<ShoppingBag size={24} />} 
+        />
+        <StatCard 
+          title="Today's Profit" 
+          value={loading || !metrics ? '…' : formatCurrency(metrics.today_profit)} 
+          icon={<TrendingUp size={24} />} 
+          trend={metrics && metrics.today_profit >= 0 ? 'up' : metrics ? 'down' : undefined}
+        />
+        <StatCard 
+          title="Total Customers" 
+          value={loading || !metrics ? '…' : metrics.total_customers.toLocaleString()} 
+          icon={<Users size={24} />} 
+        />
+      </div>
 
       {/* Middle Row: Charts & AI */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

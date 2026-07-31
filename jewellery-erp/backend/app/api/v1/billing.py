@@ -2,11 +2,12 @@ from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.db.database import get_db
+from app.api.dependencies import get_current_user
 from app.repositories.transaction_repo import bill_repo
 from app.schemas.billing import BillCreate, BillResponse
 from app.services.billing_service import BillingService
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 @router.get("/", response_model=List[BillResponse])
 def get_bills(

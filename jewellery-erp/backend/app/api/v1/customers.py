@@ -5,11 +5,13 @@ from sqlalchemy import or_
 from decimal import Decimal
 
 from app.db.database import get_db
+from app.api.dependencies import get_current_user
+from app.models.user import User
 from app.repositories.crm_repo import customer_repo
 from app.schemas.crm import CustomerCreate, CustomerUpdate, CustomerResponse, CustomerListResponse
 from app.models.crm import Customer
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 @router.get("/", response_model=CustomerListResponse)

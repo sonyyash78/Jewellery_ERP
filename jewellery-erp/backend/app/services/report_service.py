@@ -86,9 +86,9 @@ class ReportService:
         query = db.query(Purchase)
         
         if start_date:
-            query = query.filter(func.date(Purchase.purchase_date) >= start_date)
+            query = query.filter(func.date(Purchase.created_at) >= start_date)
         if end_date:
-            query = query.filter(func.date(Purchase.purchase_date) <= end_date)
+            query = query.filter(func.date(Purchase.created_at) <= end_date)
         
         purchases = query.all()
         
@@ -247,9 +247,9 @@ class ReportService:
         """
         # For now, we'll use a simplified approach
         # In production, you'd track purchase cost per item in inventory
-        from app.models.inventory import Inventory
+        from app.models.inventory import Inventory, ItemStatus
         
-        inventory_items = db.query(Inventory).filter(Inventory.status == 'AVAILABLE').all()
+        inventory_items = db.query(Inventory).filter(Inventory.status == ItemStatus.AVAILABLE).all()
         
         total_weight = Decimal('0')
         total_items = 0

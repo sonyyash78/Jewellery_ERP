@@ -14,7 +14,7 @@ export function SalesTrendChart() {
 
   return (
     <div className="bg-surface rounded-xl border border-gray-800 p-6 h-96 flex flex-col">
-      <h3 className="font-bold text-lg text-textMain mb-4">Weekly Sales Trend</h3>
+      <h3 className="font-bold text-lg text-textMain mb-4">Sales Trend</h3>
       <div className="flex-1">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data}>
@@ -43,7 +43,7 @@ export function TopSellingChart() {
 
   return (
     <div className="bg-surface rounded-xl border border-gray-800 p-6 h-96 flex flex-col">
-      <h3 className="font-bold text-lg text-textMain mb-4">Top Categories</h3>
+      <h3 className="font-bold text-lg text-textMain mb-4">Top Selling Categories</h3>
       <div className="flex-1">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ top: 0, right: 0, left: 10, bottom: 0 }}>

@@ -202,6 +202,7 @@ export default function CRM() {
               <tr>
                 <th className="py-3 px-4 font-bold uppercase tracking-wider text-xs">Name</th>
                 <th className="py-3 px-4 font-bold uppercase tracking-wider text-xs">Contact</th>
+                <th className="py-3 px-4 font-bold uppercase tracking-wider text-xs">City</th>
                 <th className="py-3 px-4 font-bold uppercase tracking-wider text-xs">GST / ID</th>
                 <th className="py-3 px-4 font-bold uppercase tracking-wider text-xs">{tab === 'customers' ? 'Credit Limit' : 'Status'}</th>
                 <th className="py-3 px-4 font-bold uppercase tracking-wider text-xs">Outstanding</th>
@@ -213,6 +214,7 @@ export default function CRM() {
                 <tr key={person.id} className="hover:bg-gray-800/30 transition-colors">
                   <td className="py-3 px-4 font-bold text-textMain">{tab === 'customers' ? `${person.first_name} ${person.last_name || ''}` : person.name}</td>
                   <td className="py-3 px-4">{person.phone_number || person.mobile}</td>
+                  <td className="py-3 px-4">{person.city || '—'}</td>
                   <td className="py-3 px-4">{person.gst_number || person.aadhaar_pan || 'N/A'}</td>
                   <td className="py-3 px-4 font-mono">
                     {tab === 'customers' ? (person.credit_limit ? `₹ ${person.credit_limit.toLocaleString()}` : 'None') : (person.is_active ? 'Active' : 'Inactive')}
@@ -262,7 +264,7 @@ export default function CRM() {
               ))}
               {(tab === 'customers' ? customers : suppliers).length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-gray-500 italic">No records found.</td>
+                  <td colSpan={7} className="py-8 text-center text-gray-500 italic">No records found.</td>
                 </tr>
               )}
             </tbody>

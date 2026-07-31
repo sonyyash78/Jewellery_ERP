@@ -1,18 +1,16 @@
-import sys
-import os
+"""Seed default Admin role and admin user.
 
-# Add the project root to the sys path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-
-from sqlalchemy.orm import Session
-from app.db.database import SessionLocal, engine
+Import app.main first so every SQLAlchemy mapper is registered.
+"""
+from app.main import app  # noqa: F401 — registers all models
+from app.db.database import SessionLocal
 from app.models.user import User, Role
-from app.core.security import get_password_hash
+from app.core.security import get_password_hash, verify_password
+
 
 def seed_db():
     db = SessionLocal()
     try:
-        # Create Admin Role
         admin_role = db.query(Role).filter(Role.name == "Admin").first()
         if not admin_role:
             admin_role = Role(name="Admin", description="Super Administrator")
@@ -20,26 +18,30 @@ def seed_db():
             db.commit()
             db.refresh(admin_role)
             print("Created Admin Role")
-            
-        # Create Admin User
+
         admin_user = db.query(User).filter(User.username == "admin").first()
         if not admin_user:
-            hashed_password = get_password_hash("admin123")
             admin_user = User(
                 username="admin",
                 email="admin@jewelleryerp.com",
                 full_name="Super Admin",
-                hashed_password=hashed_password,
+                hashed_password=get_password_hash("admin123"),
                 role_id=admin_role.id,
-                is_active=True
+                is_active=True,
             )
             db.add(admin_user)
             db.commit()
             print("Created Default Admin User (admin / admin123)")
         else:
-            print("Admin user already exists")
+            if not verify_password("admin123", admin_user.hashed_password):
+                admin_user.hashed_password = get_password_hash("admin123")
+                db.commit()
+                print("Reset admin password to admin123")
+            else:
+                print("Admin user already exists")
     finally:
         db.close()
+
 
 if __name__ == "__main__":
     seed_db()

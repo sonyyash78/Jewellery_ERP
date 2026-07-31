@@ -3,6 +3,7 @@ import { LoginPage } from '../pages/LoginPage';
 
 // Do not use the global auth setup for this file because we are testing auth
 test.use({ storageState: { cookies: [], origins: [] } });
+test.describe.configure({ mode: 'serial' });
 
 test.describe('Authentication', () => {
   test('should login successfully with valid credentials', async ({ page }) => {

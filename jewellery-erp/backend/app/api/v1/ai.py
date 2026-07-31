@@ -3,14 +3,14 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from pydantic import BaseModel
 from datetime import datetime
-from app.api.dependencies import get_db
+from app.api.dependencies import get_db, get_current_user
 from app.models.invoice import Invoice
 from app.models.purchase import Purchase
 from app.models.stock_item import StockItem
 from app.models.customer import Customer
 from app.models.seller import Seller
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 class AIQuery(BaseModel):
     prompt: str
@@ -28,7 +28,7 @@ def process_ai_chat(query: AIQuery, db: Session = Depends(get_db)):
 
     # 2. Today's Purchases
     if "today" in prompt and "purchase" in prompt:
-        purchases = db.query(func.sum(Purchase.total_amount)).filter(Purchase.purchase_date >= start_of_day).scalar() or 0
+        purchases = db.query(func.sum(Purchase.grand_total)).filter(Purchase.created_at >= start_of_day).scalar() or 0
         return {"response": f"**Today's Total Purchases** amount to **₹{purchases:,.2f}**."}
 
     # 3. Top Customers

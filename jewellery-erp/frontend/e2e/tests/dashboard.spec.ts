@@ -18,9 +18,9 @@ test.describe('Dashboard', () => {
   });
 
   test('should display recent activity and charts', async ({ page }) => {
-    await expect(page.getByText('Sales Trend')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Sales Trend' })).toBeVisible();
     // Assuming RecentTables has 'Recent Invoices' or something similar. We can just check for Top Selling.
-    await expect(page.getByText('Top Selling Categories')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Top Selling Categories' })).toBeVisible();
   });
 
   test('navigation links should be present', async ({ page }) => {
@@ -30,8 +30,9 @@ test.describe('Dashboard', () => {
       'Reports', 'Settings'
     ];
 
+    const nav = page.getByRole('navigation');
     for (const link of sidebarLinks) {
-      await expect(page.getByRole('link', { name: link, exact: true })).toBeVisible();
+      await expect(nav.getByRole('link', { name: link, exact: true })).toBeVisible();
     }
   });
 });

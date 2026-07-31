@@ -4,12 +4,13 @@ from typing import Dict, Any, List
 from pydantic import BaseModel
 from app.api.dependencies import get_db, get_current_user
 from app.models.setting import Setting
+from app.models.user import User
 from app.schemas.metal_rate import MetalRateResponse
 from app.services import metal_rate_service
 import os
 import shutil
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 class SettingItem(BaseModel):
     key: str

@@ -3,12 +3,13 @@ from fastapi import APIRouter, Depends, HTTPException, status, Response
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from app.db.database import get_db
+from app.api.dependencies import get_current_user
 from app.repositories.inventory_repo import inventory_repo, category_repo, qr_repo
 from app.schemas.inventory import InventoryCreate, InventoryUpdate, InventoryResponse, CategoryCreate, CategoryResponse, CategoryUpdate
 import os
 from app.core.config import settings
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 @router.get("/categories", response_model=List[CategoryResponse])
 def get_categories(

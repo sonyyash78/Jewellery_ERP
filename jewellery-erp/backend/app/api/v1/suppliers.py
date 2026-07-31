@@ -2,10 +2,11 @@ from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.db.database import get_db
+from app.api.dependencies import get_current_user
 from app.repositories.crm_repo import supplier_repo
 from app.schemas.crm import SupplierCreate, SupplierUpdate, SupplierResponse
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 @router.get("/", response_model=List[SupplierResponse])
 def get_suppliers(

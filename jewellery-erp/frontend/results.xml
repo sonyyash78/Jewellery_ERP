@@ -1,303 +1,44 @@
-<testsuites id="" name="" tests="46" failures="1" skipped="45" errors="0" time="14.983974">
-<testsuite name="..\auth.setup.ts" timestamp="2026-07-29T19:38:55.174Z" hostname="setup" tests="1" failures="1" skipped="0" time="12.732" errors="0">
-<testcase name="authenticate" classname="..\auth.setup.ts" time="12.732">
-<system-out>
-<![CDATA[
-[[ATTACHMENT|test-results\auth.setup.ts-authenticate-setup\test-failed-1.png]]
-
-[[ATTACHMENT|test-results\auth.setup.ts-authenticate-setup\video.webm]]
-
-[[ATTACHMENT|test-results\auth.setup.ts-authenticate-setup\error-context.md]]
-
-[[ATTACHMENT|test-results\auth.setup.ts-authenticate-setup-retry1\test-failed-1.png]]
-
-[[ATTACHMENT|test-results\auth.setup.ts-authenticate-setup-retry1\video.webm]]
-
-[[ATTACHMENT|test-results\auth.setup.ts-authenticate-setup-retry1\error-context.md]]
-
-[[ATTACHMENT|test-results\auth.setup.ts-authenticate-setup-retry1\trace.zip]]
-]]>
-</system-out>
-<failure message="expect(page).toHaveURL(expected) failed" type="expect.toHaveURL">
-<![CDATA[  [setup] › ..\auth.setup.ts:6:1 › authenticate ────────────────────────────────────────────────────
-
-    Error: expect(page).toHaveURL(expected) failed
-
-    Expected: "http://localhost:5174/"
-    Received: "http://localhost:5174/login"
-    Timeout:  5000ms
-
-    Call log:
-      - Expect "toHaveURL" with timeout 5000ms
-        14 × locator resolved to <html lang="en">…</html>
-           - unexpected value "http://localhost:5174/login"
-
-
-      11 |   
-      12 |   // Wait until the dashboard is fully loaded
-    > 13 |   await expect(page).toHaveURL('/');
-         |                      ^
-      14 |   await expect(page.getByText('Today\'s Sales')).toBeVisible();
-      15 |
-      16 |   // Save the auth state
-        at C:\Users\yashs\Documents\One Drive\OneDrive\Desktop\Saideep\jewellery-erp\frontend\e2e\auth.setup.ts:13:22
-
-    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    ..\..\test-results\auth.setup.ts-authenticate-setup\test-failed-1.png
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
-    ..\..\test-results\auth.setup.ts-authenticate-setup\video.webm
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    Error Context: ..\..\test-results\auth.setup.ts-authenticate-setup\error-context.md
-
-    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
-
-    Error: expect(page).toHaveURL(expected) failed
-
-    Expected: "http://localhost:5174/"
-    Received: "http://localhost:5174/login"
-    Timeout:  5000ms
-
-    Call log:
-      - Expect "toHaveURL" with timeout 5000ms
-        14 × locator resolved to <html lang="en">…</html>
-           - unexpected value "http://localhost:5174/login"
-
-
-      11 |   
-      12 |   // Wait until the dashboard is fully loaded
-    > 13 |   await expect(page).toHaveURL('/');
-         |                      ^
-      14 |   await expect(page.getByText('Today\'s Sales')).toBeVisible();
-      15 |
-      16 |   // Save the auth state
-        at C:\Users\yashs\Documents\One Drive\OneDrive\Desktop\Saideep\jewellery-erp\frontend\e2e\auth.setup.ts:13:22
-
-    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    ..\..\test-results\auth.setup.ts-authenticate-setup-retry1\test-failed-1.png
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
-    ..\..\test-results\auth.setup.ts-authenticate-setup-retry1\video.webm
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-
-    Error Context: ..\..\test-results\auth.setup.ts-authenticate-setup-retry1\error-context.md
-
-    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
-    ..\..\test-results\auth.setup.ts-authenticate-setup-retry1\trace.zip
-    Usage:
-
-        npx playwright show-trace ..\..\test-results\auth.setup.ts-authenticate-setup-retry1\trace.zip
-
-    ────────────────────────────────────────────────────────────────────────────────────────────────
-]]>
-</failure>
+<testsuites id="" name="" tests="16" failures="0" skipped="0" errors="0" time="53.330659999999995">
+<testsuite name="..\auth.setup.ts" timestamp="2026-07-31T08:02:35.101Z" hostname="setup" tests="1" failures="0" skipped="0" time="2.002" errors="0">
+<testcase name="authenticate" classname="..\auth.setup.ts" time="2.002">
 </testcase>
 </testsuite>
-<testsuite name="auth.spec.ts" timestamp="2026-07-29T19:38:55.174Z" hostname="chromium" tests="3" failures="0" skipped="3" time="0" errors="0">
-<testcase name="Authentication › should login successfully with valid credentials" classname="auth.spec.ts">
-<skipped>
-</skipped>
+<testsuite name="auth.spec.ts" timestamp="2026-07-31T08:02:35.101Z" hostname="chromium" tests="3" failures="0" skipped="0" time="38.773" errors="0">
+<testcase name="Authentication › should login successfully with valid credentials" classname="auth.spec.ts" time="7.434">
 </testcase>
-<testcase name="Authentication › should fail to login with invalid credentials" classname="auth.spec.ts">
-<skipped>
-</skipped>
+<testcase name="Authentication › should fail to login with invalid credentials" classname="auth.spec.ts" time="10.08">
 </testcase>
-<testcase name="Authentication › should logout successfully" classname="auth.spec.ts">
-<skipped>
-</skipped>
+<testcase name="Authentication › should logout successfully" classname="auth.spec.ts" time="21.259">
 </testcase>
 </testsuite>
-<testsuite name="customers.spec.ts" timestamp="2026-07-29T19:38:55.174Z" hostname="chromium" tests="6" failures="0" skipped="6" time="0" errors="0">
-<testcase name="Customers Module › should create a new customer successfully" classname="customers.spec.ts">
-<skipped>
-</skipped>
+<testsuite name="customers.spec.ts" timestamp="2026-07-31T08:02:35.101Z" hostname="chromium" tests="6" failures="0" skipped="0" time="81.813" errors="0">
+<testcase name="Customers Module › should create a new customer successfully" classname="customers.spec.ts" time="11.015">
 </testcase>
-<testcase name="Customers Module › should fail to create customer with duplicate mobile" classname="customers.spec.ts">
-<skipped>
-</skipped>
+<testcase name="Customers Module › should fail to create customer with duplicate mobile" classname="customers.spec.ts" time="13.16">
 </testcase>
-<testcase name="Customers Module › should validate required fields" classname="customers.spec.ts">
-<skipped>
-</skipped>
+<testcase name="Customers Module › should validate required fields" classname="customers.spec.ts" time="15.012">
 </testcase>
-<testcase name="Customers Module › should search customer" classname="customers.spec.ts">
-<skipped>
-</skipped>
+<testcase name="Customers Module › should search customer" classname="customers.spec.ts" time="17.765">
 </testcase>
-<testcase name="Customers Module › should edit customer" classname="customers.spec.ts">
-<skipped>
-</skipped>
+<testcase name="Customers Module › should edit customer" classname="customers.spec.ts" time="12.747">
 </testcase>
-<testcase name="Customers Module › should delete customer" classname="customers.spec.ts">
-<skipped>
-</skipped>
+<testcase name="Customers Module › should delete customer" classname="customers.spec.ts" time="12.114">
 </testcase>
 </testsuite>
-<testsuite name="dashboard.spec.ts" timestamp="2026-07-29T19:38:55.174Z" hostname="chromium" tests="4" failures="0" skipped="4" time="0" errors="0">
-<testcase name="Dashboard › should load the dashboard successfully" classname="dashboard.spec.ts">
-<skipped>
-</skipped>
+<testsuite name="dashboard.spec.ts" timestamp="2026-07-31T08:02:35.101Z" hostname="chromium" tests="4" failures="0" skipped="0" time="13.84" errors="0">
+<testcase name="Dashboard › should load the dashboard successfully" classname="dashboard.spec.ts" time="5.431">
 </testcase>
-<testcase name="Dashboard › should display KPI cards" classname="dashboard.spec.ts">
-<skipped>
-</skipped>
+<testcase name="Dashboard › should display KPI cards" classname="dashboard.spec.ts" time="5.434">
 </testcase>
-<testcase name="Dashboard › should display recent activity and charts" classname="dashboard.spec.ts">
-<skipped>
-</skipped>
+<testcase name="Dashboard › should display recent activity and charts" classname="dashboard.spec.ts" time="1.549">
 </testcase>
-<testcase name="Dashboard › navigation links should be present" classname="dashboard.spec.ts">
-<skipped>
-</skipped>
+<testcase name="Dashboard › navigation links should be present" classname="dashboard.spec.ts" time="1.426">
 </testcase>
 </testsuite>
-<testsuite name="suppliers.spec.ts" timestamp="2026-07-29T19:38:55.174Z" hostname="chromium" tests="2" failures="0" skipped="2" time="0" errors="0">
-<testcase name="Suppliers Module › should create a new supplier successfully" classname="suppliers.spec.ts">
-<skipped>
-</skipped>
+<testsuite name="suppliers.spec.ts" timestamp="2026-07-31T08:02:35.101Z" hostname="chromium" tests="2" failures="0" skipped="0" time="4.024" errors="0">
+<testcase name="Suppliers Module › should create a new supplier successfully" classname="suppliers.spec.ts" time="1.779">
 </testcase>
-<testcase name="Suppliers Module › should edit supplier" classname="suppliers.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-</testsuite>
-<testsuite name="auth.spec.ts" timestamp="2026-07-29T19:38:55.174Z" hostname="firefox" tests="3" failures="0" skipped="3" time="0" errors="0">
-<testcase name="Authentication › should login successfully with valid credentials" classname="auth.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Authentication › should fail to login with invalid credentials" classname="auth.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Authentication › should logout successfully" classname="auth.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-</testsuite>
-<testsuite name="customers.spec.ts" timestamp="2026-07-29T19:38:55.174Z" hostname="firefox" tests="6" failures="0" skipped="6" time="0" errors="0">
-<testcase name="Customers Module › should create a new customer successfully" classname="customers.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Customers Module › should fail to create customer with duplicate mobile" classname="customers.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Customers Module › should validate required fields" classname="customers.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Customers Module › should search customer" classname="customers.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Customers Module › should edit customer" classname="customers.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Customers Module › should delete customer" classname="customers.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-</testsuite>
-<testsuite name="dashboard.spec.ts" timestamp="2026-07-29T19:38:55.174Z" hostname="firefox" tests="4" failures="0" skipped="4" time="0" errors="0">
-<testcase name="Dashboard › should load the dashboard successfully" classname="dashboard.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Dashboard › should display KPI cards" classname="dashboard.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Dashboard › should display recent activity and charts" classname="dashboard.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Dashboard › navigation links should be present" classname="dashboard.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-</testsuite>
-<testsuite name="suppliers.spec.ts" timestamp="2026-07-29T19:38:55.174Z" hostname="firefox" tests="2" failures="0" skipped="2" time="0" errors="0">
-<testcase name="Suppliers Module › should create a new supplier successfully" classname="suppliers.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Suppliers Module › should edit supplier" classname="suppliers.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-</testsuite>
-<testsuite name="auth.spec.ts" timestamp="2026-07-29T19:38:55.174Z" hostname="webkit" tests="3" failures="0" skipped="3" time="0" errors="0">
-<testcase name="Authentication › should login successfully with valid credentials" classname="auth.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Authentication › should fail to login with invalid credentials" classname="auth.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Authentication › should logout successfully" classname="auth.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-</testsuite>
-<testsuite name="customers.spec.ts" timestamp="2026-07-29T19:38:55.174Z" hostname="webkit" tests="6" failures="0" skipped="6" time="0" errors="0">
-<testcase name="Customers Module › should create a new customer successfully" classname="customers.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Customers Module › should fail to create customer with duplicate mobile" classname="customers.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Customers Module › should validate required fields" classname="customers.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Customers Module › should search customer" classname="customers.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Customers Module › should edit customer" classname="customers.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Customers Module › should delete customer" classname="customers.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-</testsuite>
-<testsuite name="dashboard.spec.ts" timestamp="2026-07-29T19:38:55.174Z" hostname="webkit" tests="4" failures="0" skipped="4" time="0" errors="0">
-<testcase name="Dashboard › should load the dashboard successfully" classname="dashboard.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Dashboard › should display KPI cards" classname="dashboard.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Dashboard › should display recent activity and charts" classname="dashboard.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Dashboard › navigation links should be present" classname="dashboard.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-</testsuite>
-<testsuite name="suppliers.spec.ts" timestamp="2026-07-29T19:38:55.174Z" hostname="webkit" tests="2" failures="0" skipped="2" time="0" errors="0">
-<testcase name="Suppliers Module › should create a new supplier successfully" classname="suppliers.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Suppliers Module › should edit supplier" classname="suppliers.spec.ts">
-<skipped>
-</skipped>
+<testcase name="Suppliers Module › should edit supplier" classname="suppliers.spec.ts" time="2.245">
 </testcase>
 </testsuite>
 </testsuites>

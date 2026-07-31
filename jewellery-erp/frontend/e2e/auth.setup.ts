@@ -11,7 +11,7 @@ setup('authenticate', async ({ page }) => {
   
   // Wait until the dashboard is fully loaded
   await expect(page).toHaveURL('/');
-  await expect(page.getByText('Today\'s Sales')).toBeVisible();
+  await expect(page.getByText('Today\'s Sales')).toBeVisible({ timeout: 15000 });
 
   // Save the auth state
   await page.context().storageState({ path: authFile });

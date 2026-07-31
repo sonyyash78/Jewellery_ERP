@@ -27,9 +27,12 @@ test.describe('Customers Module', () => {
     await page.getByLabel('Name').fill(duplicateData.name);
     await page.getByLabel('Mobile Number').fill(duplicateData.mobile);
     
-    await Helpers.waitForApi(page, '/api/v1/customers', async () => {
-      await page.getByRole('button', { name: 'Save' }).click();
-    });
+    const responsePromise = page.waitForResponse(
+      response => response.url().includes('/api/v1/customers') && response.request().method() === 'POST'
+    );
+    await page.getByRole('button', { name: 'Save' }).click();
+    const response = await responsePromise;
+    expect(response.status()).toBeGreaterThanOrEqual(400);
 
     await expect(page.getByText(/mobile number already exists/i)).toBeVisible();
   });

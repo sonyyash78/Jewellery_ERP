@@ -31,3 +31,4 @@ class User(Base):
     role = relationship("Role", back_populates="users")
     invoices = relationship("Invoice", back_populates="creator")
     inventory_transactions = relationship("InventoryTransaction", back_populates="user")
+    reports = relationship("GeneratedReport", back_populates="generator")

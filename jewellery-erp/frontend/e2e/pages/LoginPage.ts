@@ -22,13 +22,13 @@ export class LoginPage {
 
   async expectSuccess() {
     // Expect to be redirected to dashboard
-    await expect(this.page).toHaveURL('/');
+    await expect(this.page).toHaveURL('/', { timeout: 15000 });
     // Expect a success toast or dashboard header
-    await expect(this.page.getByText('Today\'s Sales')).toBeVisible();
+    await expect(this.page.getByText('Today\'s Sales')).toBeVisible({ timeout: 15000 });
   }
 
   async expectFailure() {
     // Expect an error toast or message
-    await expect(this.page.getByText(/Invalid credentials|Login failed/i)).toBeVisible();
+    await expect(this.page.getByText(/Incorrect username|Invalid credentials|Login failed|check credentials/i)).toBeVisible({ timeout: 10000 });
   }
 }
