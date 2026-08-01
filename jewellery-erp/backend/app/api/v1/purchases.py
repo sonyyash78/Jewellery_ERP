@@ -1,5 +1,5 @@
 from typing import Any, List
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Query
 from sqlalchemy.orm import Session
 from decimal import Decimal
 from app.db.database import get_db
@@ -73,17 +73,8 @@ def create_unified_purchase(
     
     # Process each item and recalculate
     for item_in in purchase_in.items:
-        # Get latest metal rate
-        if item_in.metal_type.lower() == 'gold':
-            latest_rate = db.query(GoldRate).order_by(GoldRate.effective_datetime.desc()).first()
-            if not latest_rate:
-                raise HTTPException(400, "No Gold Rate configured")
-            metal_rate = Decimal(str(latest_rate.rate_per_gram))
-        else:  # silver
-            latest_rate = db.query(SilverRate).order_by(SilverRate.effective_datetime.desc()).first()
-            if not latest_rate:
-                raise HTTPException(400, "No Silver Rate configured")
-            metal_rate = Decimal(str(latest_rate.rate_per_gram))
+        # Use the metal rate provided by the frontend (negotiated rate)
+        metal_rate = Decimal(str(item_in.metal_rate))
         
         # Use CalculationService for purchase calculation
         calc_result = CalculationService.calculate_purchase(
@@ -138,6 +129,22 @@ def create_unified_purchase(
     db_purchase.igst = float(purchase_igst)
     db_purchase.grand_total = float(purchase_grand_total)
     
+    # Update seller outstanding balance
+    seller.outstanding_balance = float(seller.outstanding_balance or 0) + float(purchase_grand_total)
+    
+    # Create supplier ledger entry
+    from app.models.supplier_ledger import SupplierLedger
+    ledger_entry = SupplierLedger(
+        seller_id=seller.id,
+        voucher_type='Purchase',
+        voucher_number=db_purchase.purchase_number,
+        description=f"Purchase {db_purchase.purchase_number}",
+        debit=0,
+        credit=float(purchase_grand_total),
+        balance=seller.outstanding_balance
+    )
+    db.add(ledger_entry)
+    
     db.commit()
     db.refresh(db_purchase)
     
@@ -146,11 +153,55 @@ def create_unified_purchase(
 @router.get("/", response_model=List[GoldPurchaseResponse])
 def get_purchases(
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
     skip: int = 0,
     limit: int = 100,
 ) -> Any:
-    """Get all gold purchases (legacy endpoint)."""
+    """Get all gold purchases (legacy endpoint). Auth required."""
     return gold_purchase_repo.get_multi(db, skip=skip, limit=limit)
+
+@router.get("/history")
+def get_unified_purchases_history(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> Any:
+    """Get all unified purchases."""
+    query = db.query(Purchase)
+    total = query.count()
+    items = query.order_by(Purchase.id.desc()).offset(skip).limit(limit).all()
+    
+    # We need to construct a basic dictionary response that matches the invoice history structure somewhat
+    results = []
+    for p in items:
+        results.append({
+            "id": p.id,
+            "invoice_number": p.purchase_number,
+            "invoice_date": p.created_at,
+            "grand_total": p.grand_total,
+            "status": p.status,
+            "customer": {
+                "first_name": p.seller.name if p.seller else 'Unknown',
+                "last_name": '',
+                "phone_number": p.seller.mobile if p.seller else ''
+            }
+        })
+    return {"total": total, "items": results}
+
+@router.get("/{id}/pdf-data")
+def get_purchase_pdf_data(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get purchase data formatted for PDF generation."""
+    try:
+        from app.services.invoice_pdf_service import InvoicePDFService
+        return InvoicePDFService.get_purchase_pdf_data(id, db)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
 
 @router.get("/gold", response_model=List[GoldPurchaseResponse])
 def get_gold_purchases(

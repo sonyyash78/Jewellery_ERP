@@ -30,13 +30,14 @@ def create_sale(
     current_user: User = Depends(get_current_user)
 ):
     """Create a sale (invoice)."""
-    # 1. Validate customer exists
-    customer = db.query(Customer).filter(Customer.id == invoice_in.customer_id).first()
-    if not customer:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Customer with id {invoice_in.customer_id} not found"
-        )
+    # 1. Validate customer exists (if provided)
+    if invoice_in.customer_id is not None:
+        customer = db.query(Customer).filter(Customer.id == invoice_in.customer_id).first()
+        if not customer:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Customer with id {invoice_in.customer_id} not found"
+            )
     
     # 2. Validate tax calculation
     calculated_subtotal = sum(item.final_price for item in invoice_in.items)
@@ -94,22 +95,18 @@ def create_sale(
                 if calc_in.net_weight > calc_in.gross_weight:
                     raise HTTPException(status_code=400, detail="Net weight cannot exceed gross weight")
                 
-                # Fetch latest gold rate
+                # Fetch latest gold rate (optional, just for linking)
                 latest_gold_rate = (
                     db.query(GoldRate)
                     .order_by(GoldRate.effective_datetime.desc())
                     .first()
                 )
-                if not latest_gold_rate:
-                    raise HTTPException(
-                        status_code=400,
-                        detail="No Gold Rate configured. Please add a gold rate in Settings."
-                    )
+                metal_rate_val = Decimal(str(calc_in.applied_rate))
                 
                 # Use calculation service for selling calculation
                 calc_result = CalculationService.calculate_selling(
                     net_weight=Decimal(str(calc_in.net_weight)),
-                    metal_rate=Decimal(str(latest_gold_rate.rate_per_gram)),
+                    metal_rate=metal_rate_val,
                     making_rate=Decimal(str(calc_in.making_charges_amount)),
                     making_type='FIXED',
                     hallmark=Decimal(str(calc_in.hallmark_charges)),
@@ -120,7 +117,8 @@ def create_sale(
                 
                 db_gold = GoldCalculation(
                     invoice_item_id=db_item.id,
-                    metal_rate_id=latest_gold_rate.id,
+                    metal_rate_id=latest_gold_rate.id if latest_gold_rate else None,
+                    applied_rate=float(metal_rate_val),
                     gross_weight=calc_in.gross_weight,
                     stone_weight=calc_in.stone_weight,
                     net_weight=calc_in.net_weight,
@@ -141,22 +139,18 @@ def create_sale(
                 if calc_in.net_weight > calc_in.gross_weight:
                     raise HTTPException(status_code=400, detail="Net weight cannot exceed gross weight")
                 
-                # Fetch latest silver rate
+                # Fetch latest silver rate (optional, just for linking)
                 latest_silver_rate = (
                     db.query(SilverRate)
                     .order_by(SilverRate.effective_datetime.desc())
                     .first()
                 )
-                if not latest_silver_rate:
-                    raise HTTPException(
-                        status_code=400,
-                        detail="No Silver Rate configured. Please add a silver rate in Settings."
-                    )
+                metal_rate_val = Decimal(str(calc_in.applied_rate))
                 
                 # Use calculation service
                 calc_result = CalculationService.calculate_selling(
                     net_weight=Decimal(str(calc_in.net_weight)),
-                    metal_rate=Decimal(str(latest_silver_rate.rate_per_gram)),
+                    metal_rate=metal_rate_val,
                     making_rate=Decimal(str(calc_in.making_charges_amount)),
                     making_type='FIXED',
                     hallmark=Decimal('0'),
@@ -173,7 +167,8 @@ def create_sale(
                 
                 db_silver = SilverCalculation(
                     invoice_item_id=db_item.id,
-                    metal_rate_id=latest_silver_rate.id,
+                    metal_rate_id=latest_silver_rate.id if latest_silver_rate else None,
+                    applied_rate=float(metal_rate_val),
                     gross_weight=calc_in.gross_weight,
                     tanch_percentage=tanch_percentage,
                     pure_weight=pure_weight,
@@ -221,4 +216,31 @@ def get_sale(
     invoice = db.query(Invoice).filter(Invoice.id == id).first()
     if not invoice:
         raise HTTPException(status_code=404, detail="Sale not found")
+    return invoice
+
+from typing import Dict, Any
+
+@router.patch("/{id}/customer", response_model=InvoiceResponse)
+def link_customer_to_invoice(
+    id: int,
+    payload: Dict[str, Any],
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Link a customer to an existing invoice."""
+    invoice = db.query(Invoice).filter(Invoice.id == id).first()
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+        
+    customer_id = payload.get("customer_id")
+    if not customer_id:
+        raise HTTPException(status_code=400, detail="customer_id is required")
+        
+    customer = db.query(Customer).filter(Customer.id == customer_id).first()
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+        
+    invoice.customer_id = customer_id
+    db.commit()
+    db.refresh(invoice)
     return invoice

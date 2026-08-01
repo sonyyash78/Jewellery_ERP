@@ -3,10 +3,15 @@ import { Calculator, Save, Printer, RefreshCw, Smartphone } from 'lucide-react';
 import { axiosClient } from '../../api/axiosClient';
 import toast from 'react-hot-toast';
 import { useState } from 'react';
+import PostBillModal from './PostBillModal';
+import LiveRatesModal from './LiveRatesModal';
 
 export default function LiveBillSummary() {
-  const { cart, gstState, clearCart } = useBillingStore();
+  const { cart, gstState, clearCart, selectedCustomerId } = useBillingStore();
   const [loading, setLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [showRatesModal, setShowRatesModal] = useState(false);
+  const [generatedInvoiceId, setGeneratedInvoiceId] = useState<number | null>(null);
 
   const totalGross = cart.reduce((sum, item) => sum + item.grossWeight, 0);
   const totalStone = cart.reduce((sum, item) => sum + item.stoneWeight, 0);
@@ -39,7 +44,7 @@ export default function LiveBillSummary() {
     setLoading(true);
     
     const payload = {
-      customer_id: 1, // Mock or fetch from store
+      customer_id: selectedCustomerId || null,
       subtotal: taxableAmount,
       tax_amount: cgst + sgst + igst,
       discount_amount: totalDiscount,
@@ -50,18 +55,24 @@ export default function LiveBillSummary() {
         item_type: item.itemType,
         final_price: item.taxableAmount,
         gold_calculation: item.itemType === 'Gold' ? {
-          metal_rate_id: 1,
+          metal_rate_id: null,
+          applied_rate: item.rateDisplay,
           gross_weight: item.grossWeight,
           stone_weight: item.stoneWeight,
           net_weight: item.netWeight,
+          making_charge_type: item.rawGold?.makingChargeType || 'flat',
+          making_charge_rate: item.rawGold?.makingChargeValue || 0,
           making_charges_amount: item.makingAmount,
           hallmark_charges: item.hallmark,
           total_gold_value: item.metalValue
         } : null,
         silver_calculation: item.itemType === 'Silver' ? {
-          metal_rate_id: 2,
+          metal_rate_id: null,
+          applied_rate: item.rateDisplay,
           gross_weight: item.grossWeight,
           net_weight: item.netWeight,
+          making_charge_type: item.rawSilver?.makingChargeType || 'flat',
+          making_charge_rate: item.rawSilver?.makingChargeValue || 0,
           making_charges_amount: item.makingAmount,
           total_silver_value: item.metalValue
         } : null
@@ -70,8 +81,15 @@ export default function LiveBillSummary() {
 
     try {
       const res = await axiosClient.post('/invoices/', payload);
-      toast.success(`Bill Generated: ${res.data.invoice_number}`);
-      clearCart();
+      
+      if (selectedCustomerId) {
+        toast.success(`Invoice ${res.data.invoice_number} generated successfully!`);
+        clearCart();
+        useBillingStore.getState().setSelectedCustomerId(null);
+      } else {
+        setGeneratedInvoiceId(res.data.id);
+        setShowModal(true);
+      }
     } catch (e: any) {
       toast.error(e.response?.data?.detail || "Failed to generate");
     } finally {
@@ -85,7 +103,12 @@ export default function LiveBillSummary() {
       
       <div className="flex justify-between items-center mb-4 border-b border-gray-800 pb-2">
         <h3 className="font-bold text-sm tracking-widest uppercase">Bill Summary</h3>
-        <span className="text-xs text-textMuted bg-gray-900 px-2 py-1 rounded">{cart.length} Items</span>
+        <div className="flex items-center space-x-2">
+          <button onClick={() => setShowRatesModal(true)} className="text-primary hover:text-white transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          </button>
+          <span className="text-xs text-textMuted bg-gray-900 px-2 py-1 rounded">{cart.length} Items</span>
+        </div>
       </div>
 
       <div className="flex-1 space-y-2 text-xs custom-scrollbar overflow-y-auto pr-2">
@@ -143,6 +166,22 @@ export default function LiveBillSummary() {
           </button>
         </div>
       </div>
+      
+      {showModal && generatedInvoiceId && (
+        <PostBillModal 
+          invoiceId={generatedInvoiceId} 
+          onClose={() => {
+            setShowModal(false);
+            setGeneratedInvoiceId(null);
+            clearCart();
+            useBillingStore.getState().setSelectedCustomerId(null);
+          }} 
+        />
+      )}
+
+      {showRatesModal && (
+        <LiveRatesModal onClose={() => setShowRatesModal(false)} />
+      )}
     </div>
   );
 }

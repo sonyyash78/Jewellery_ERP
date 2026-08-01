@@ -5,18 +5,24 @@ from app.models.invoice import InvoiceStatus
 from app.models.invoice_item import ItemType
 
 class GoldCalcCreate(BaseModel):
-    metal_rate_id: int
+    metal_rate_id: Optional[int] = None
+    applied_rate: float
     gross_weight: float
     stone_weight: float = 0.0
     net_weight: float
+    making_charge_type: str = "flat"
+    making_charge_rate: float = 0.0
     making_charges_amount: float = 0.0
     hallmark_charges: float = 0.0
     total_gold_value: float
 
 class SilverCalcCreate(BaseModel):
-    metal_rate_id: int
+    metal_rate_id: Optional[int] = None
+    applied_rate: float
     gross_weight: float
     net_weight: float
+    making_charge_type: str = "flat"
+    making_charge_rate: float = 0.0
     making_charges_amount: float = 0.0
     total_silver_value: float
 
@@ -30,7 +36,7 @@ class InvoiceItemCreate(BaseModel):
     silver_calculation: Optional[SilverCalcCreate] = None
 
 class InvoiceCreate(BaseModel):
-    customer_id: int
+    customer_id: Optional[int] = None
     subtotal: float
     tax_amount: float
     discount_amount: float = 0.0
@@ -38,10 +44,18 @@ class InvoiceCreate(BaseModel):
     status: InvoiceStatus = InvoiceStatus.DRAFT
     items: List[InvoiceItemCreate]
 
+class InvoiceCustomerInfo(BaseModel):
+    first_name: str
+    last_name: Optional[str] = None
+    phone_number: str
+
+    model_config = ConfigDict(from_attributes=True)
+
 class InvoiceResponse(BaseModel):
     id: int
     invoice_number: str
-    customer_id: int
+    customer_id: Optional[int] = None
+    customer: Optional[InvoiceCustomerInfo] = None
     invoice_date: datetime
     subtotal: float
     tax_amount: float

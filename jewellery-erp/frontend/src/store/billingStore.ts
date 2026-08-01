@@ -56,17 +56,29 @@ export interface BillItem {
   rawSilver?: SilverForm;
 }
 
+export interface LiveRates {
+  gold24k: number;
+  gold22k: number;
+  gold20k: number;
+  gold18k: number;
+  gold14k: number;
+  silver: number;
+}
+
 interface BillingStoreState {
   cart: BillItem[];
   gstState: GSTState;
-  recentScans: string[]; // Keep track of scanned item codes
+  recentScans: string[];
+  selectedCustomerId: number | null;
   
-  // Independent Forms
+  liveRates: LiveRates;
+  
   goldForm: GoldForm;
   silverForm: SilverForm;
   
-  // Actions
+  setSelectedCustomerId: (id: number | null) => void;
   setGstState: (val: GSTState) => void;
+  updateLiveRates: (rates: Partial<LiveRates>) => void;
   updateGoldForm: (field: keyof GoldForm, value: any) => void;
   updateSilverForm: (field: keyof SilverForm, value: any) => void;
   resetGoldForm: () => void;
@@ -78,28 +90,40 @@ interface BillingStoreState {
 }
 
 const initialGoldForm: GoldForm = {
-  itemName: '', category: '', hsn: '', purity: '22K (91.6)', touch: 91.6,
-  grossWeight: 0, stoneWeight: 0, ratePerGm: 7245,
+  itemName: '', category: '', hsn: '', purity: '22K Gold', touch: 91.6,
+  grossWeight: 0, stoneWeight: 0, ratePerGm: 7250,
   makingChargeType: 'per_gm', makingChargeValue: 650,
-  hallmark: 120, otherCharges: 250, discount: 0
+  hallmark: 120, otherCharges: 0, discount: 0
 };
 
 const initialSilverForm: SilverForm = {
   itemName: '', category: '', hsn: '',
   grossWeight: 0, tanch: 65, silverPurity: 'Fine', ratePerKg: 90000,
   makingChargeType: 'per_gm', makingChargeValue: 30,
-  otherCharges: 150, discount: 0
+  otherCharges: 0, discount: 0
 };
 
 export const useBillingStore = create<BillingStoreState>((set) => ({
   cart: [],
   gstState: 'same_state',
   recentScans: [],
+  selectedCustomerId: null,
+  
+  liveRates: {
+    gold24k: 7910.0,
+    gold22k: 7250.0,
+    gold20k: 6590.0,
+    gold18k: 5930.0,
+    gold14k: 4610.0,
+    silver: 900.0 // per 10g
+  },
   
   goldForm: initialGoldForm,
   silverForm: initialSilverForm,
   
+  setSelectedCustomerId: (id) => set({ selectedCustomerId: id }),
   setGstState: (val) => set({ gstState: val }),
+  updateLiveRates: (rates) => set((state) => ({ liveRates: { ...state.liveRates, ...rates } })),
   updateGoldForm: (field, value) => set((state) => ({ goldForm: { ...state.goldForm, [field]: value } })),
   updateSilverForm: (field, value) => set((state) => ({ silverForm: { ...state.silverForm, [field]: value } })),
   
@@ -111,3 +135,4 @@ export const useBillingStore = create<BillingStoreState>((set) => ({
   clearCart: () => set({ cart: [], recentScans: [] }),
   addRecentScan: (code) => set((state) => ({ recentScans: [code, ...state.recentScans] }))
 }));
+

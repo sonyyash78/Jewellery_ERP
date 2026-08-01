@@ -23,13 +23,13 @@ def get_recent_activity(
     current_user: User = Depends(get_current_user)
 ):
     from app.models.invoice import Invoice
-    from app.models.expense import Expense
+    from app.models.purchase import Purchase
     
     recent_bills = db.query(Invoice).order_by(Invoice.invoice_date.desc()).limit(5).all()
-    recent_purchases = db.query(Expense).order_by(Expense.expense_date.desc()).limit(5).all()
+    recent_purchases = db.query(Purchase).order_by(Purchase.created_at.desc()).limit(5).all()
     
     bills = [{"id": b.id, "invoice_number": b.invoice_number, "date": b.invoice_date, "amount": float(b.grand_total)} for b in recent_bills]
-    purchases = [{"id": p.id, "description": p.description or "Purchase", "date": p.expense_date, "amount": float(p.amount)} for p in recent_purchases]
+    purchases = [{"id": p.id, "description": p.purchase_number, "date": p.created_at, "amount": float(p.grand_total)} for p in recent_purchases]
     
     return {
         "recent_bills": bills,

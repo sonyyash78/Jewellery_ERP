@@ -56,3 +56,8 @@ def test_get_nonexistent_invoice(client):
     """Test get non-existent invoice."""
     response = client.get("/api/v1/invoices/99999")
     assert response.status_code == 404
+
+def test_link_customer_to_nonexistent_invoice(client):
+    """Test linking customer to non-existent invoice."""
+    response = client.patch("/api/v1/invoices/99999/customer", json={"customer_id": 1})
+    assert response.status_code == 404

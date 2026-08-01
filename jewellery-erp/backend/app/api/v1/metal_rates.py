@@ -22,6 +22,14 @@ def add_rate(
     """Add a new metal rate (implicitly stores history by inserting new row)."""
     return metal_rate_service.add_rate(db, rate_in)
 
+@router.get("/", response_model=List[MetalRateResponse])
+def list_rates(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """List all metal rates (same as /latest - most recent active rates)."""
+    return metal_rate_service.get_latest_rates(db)
+
 @router.get("/latest", response_model=List[MetalRateResponse])
 def get_latest_rates(
     db: Session = Depends(get_db),

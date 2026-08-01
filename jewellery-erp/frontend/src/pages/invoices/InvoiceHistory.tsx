@@ -18,15 +18,17 @@ interface Invoice {
   id: number;
   invoice_number: string;
   invoice_date: string;
-  customer: {
-    name: string;
-    phone: string;
+  customer?: {
+    first_name: string;
+    last_name?: string;
+    phone_number: string;
   };
   grand_total: number;
   status: string;
 }
 
 export default function InvoiceHistory() {
+  const [tab, setTab] = useState<'sales' | 'purchases' | 'exchanges'>('sales');
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -38,7 +40,7 @@ export default function InvoiceHistory() {
 
   useEffect(() => {
     fetchInvoices();
-  }, [searchTerm, statusFilter, currentPage]);
+  }, [searchTerm, statusFilter, currentPage, tab]);
 
   const fetchInvoices = async () => {
     setLoading(true);
@@ -51,8 +53,9 @@ export default function InvoiceHistory() {
       if (searchTerm) params.append('search', searchTerm);
       if (statusFilter) params.append('status', statusFilter);
 
-      const res = await axiosClient.get(`/invoices/?${params.toString()}`);
-      setInvoices(res.data);
+      const endpoint = tab === 'sales' ? '/invoices/' : tab === 'purchases' ? '/purchases/history' : '/exchanges/';
+      const res = await axiosClient.get(`${endpoint}?${params.toString()}`);
+      setInvoices(res.data.items || res.data); // Support both paginated forms
     } catch (error) {
       console.error('Failed to fetch invoices:', error);
       toast.error('Failed to load invoice history');
@@ -71,21 +74,20 @@ export default function InvoiceHistory() {
     }
   };
 
+  const getPdfEndpoint = (id: number) => {
+    if (tab === 'purchases') return `/purchases/${id}/pdf-data`;
+    if (tab === 'exchanges') return `/exchanges/${id}/pdf-data`;
+    return `/invoices/${id}/pdf-data`;
+  };
+
   const handleDownloadPDF = async (invoice: Invoice) => {
     const toastId = 'pdf-gen';
     try {
       toast.loading('Generating PDF...', { id: toastId });
+      const res = await axiosClient.get(getPdfEndpoint(invoice.id));
+      if (!res.data) throw new Error('No data received from server');
       
-      // Fetch invoice data
-      const res = await axiosClient.get(`/invoices/${invoice.id}/pdf-data`);
-      
-      if (!res.data) {
-        throw new Error('No data received from server');
-      }
-      
-      // Generate PDF
       await generateInvoicePDF(res.data);
-      
       toast.success('PDF downloaded successfully', { id: toastId });
     } catch (error: any) {
       console.error('PDF generation error:', error);
@@ -96,8 +98,7 @@ export default function InvoiceHistory() {
 
   const handlePrint = async (invoice: Invoice) => {
     try {
-      const res = await axiosClient.get(`/invoices/${invoice.id}/pdf-data`);
-      // Create a temporary window for printing
+      const res = await axiosClient.get(getPdfEndpoint(invoice.id));
       const printWindow = window.open('', '_blank');
       if (printWindow) {
         printWindow.document.write(generatePrintHTML(res.data));
@@ -115,7 +116,7 @@ export default function InvoiceHistory() {
 
   const handleWhatsApp = async (invoice: Invoice) => {
     try {
-      const res = await axiosClient.get(`/invoices/${invoice.id}/pdf-data`);
+      const res = await axiosClient.get(getPdfEndpoint(invoice.id));
       const phone = res.data.customer.phone?.replace(/[^0-9]/g, '');
       if (!phone) {
         toast.error('Customer phone number not available');
@@ -123,7 +124,7 @@ export default function InvoiceHistory() {
       }
       
       const message = encodeURIComponent(
-        `Hello ${res.data.customer.name},\n\nYour invoice ${res.data.invoice.invoice_number} for ₹${res.data.totals.grand_total.toLocaleString('en-IN')} has been generated.\n\nThank you for your business!\n\n- ${res.data.company.name}`
+        `Hello ${res.data.customer.name},\n\nYour ${tab === 'sales' ? 'invoice' : tab === 'purchases' ? 'purchase receipt' : 'exchange invoice'} ${res.data.invoice.invoice_number} for Rs. ${res.data.totals.grand_total.toLocaleString('en-IN')} has been generated.\n\nThank you for your business!\n\n- ${res.data.company.name}`
       );
       
       window.open(`https://wa.me/91${phone}?text=${message}`, '_blank');
@@ -147,11 +148,15 @@ export default function InvoiceHistory() {
   };
 
   const generatePrintHTML = (data: any) => {
+    const isExchange = data.type === 'exchange';
+    const isPurchase = data.type === 'purchase';
+    const title = isExchange ? 'EXCHANGE INVOICE' : isPurchase ? 'PURCHASE RECEIPT' : 'TAX INVOICE';
+    
     return `
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Invoice ${data.invoice.invoice_number}</title>
+          <title>${title} ${data.invoice.invoice_number}</title>
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body { font-family: Arial, sans-serif; padding: 20px; }
@@ -174,11 +179,11 @@ export default function InvoiceHistory() {
             <div>Phone: ${data.company.phone} | GSTIN: ${data.company.gstin}</div>
           </div>
           
-          <h2 style="text-align: center; margin-bottom: 20px;">TAX INVOICE</h2>
+          <h2 style="text-align: center; margin-bottom: 20px;">${title}</h2>
           
           <div class="invoice-info">
             <div>
-              <strong>Bill To:</strong><br>
+              <strong>${isPurchase ? 'Received From:' : 'Bill To:'}</strong><br>
               ${data.customer.name}<br>
               ${data.customer.phone || ''}<br>
               ${data.customer.address || ''}
@@ -190,6 +195,8 @@ export default function InvoiceHistory() {
             </div>
           </div>
           
+          ${isExchange ? `
+          <h3 style="margin-top:20px;">Old Items Traded In</h3>
           <table class="invoice-table">
             <thead>
               <tr>
@@ -197,8 +204,43 @@ export default function InvoiceHistory() {
                 <th>Item Description</th>
                 <th>Metal</th>
                 <th>Net Weight (g)</th>
-                <th>Making (₹)</th>
-                <th>Amount (₹)</th>
+                <th>Tanch (%)</th>
+                <th>Rate</th>
+                <th>Amount (Rs.)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data.old_items?.map((item: any, i: number) => `
+                <tr>
+                  <td>${i + 1}</td>
+                  <td>${item.item_name}</td>
+                  <td>${item.metal_type || '-'}</td>
+                  <td>${item.net_weight?.toFixed(3) || '-'}</td>
+                  <td>${item.tanch_percentage?.toFixed(2) || '-'}</td>
+                  <td>Rs. ${item.applied_rate?.toFixed(1) || '-'}</td>
+                  <td>Rs. ${item.final_price?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          <div style="text-align:right; font-weight:bold; margin-bottom:20px;">
+            Total Old Value: Rs. ${data.invoice.total_old_value?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+          </div>
+          ` : ''}
+          
+          <h3 style="margin-top:20px;">${isExchange ? 'New Items Purchased' : 'Items'}</h3>
+          <table class="invoice-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Item Description</th>
+                <th>Metal</th>
+                <th>Net Weight (g)</th>
+                <th>Rate</th>
+                <th>Making (Rs.)</th>
+                <th>Hallmark</th>
+                <th>Other Chg</th>
+                <th>Amount (Rs.)</th>
               </tr>
             </thead>
             <tbody>
@@ -208,8 +250,16 @@ export default function InvoiceHistory() {
                   <td>${item.item_name}</td>
                   <td>${item.metal_type || '-'}</td>
                   <td>${item.net_weight?.toFixed(3) || item.pure_weight?.toFixed(3) || '-'}</td>
-                  <td>${item.making_charges?.toFixed(2) || '-'}</td>
-                  <td>₹ ${item.final_price.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                  <td>Rs. ${item.applied_rate?.toFixed(1) || '0.0'}</td>
+                  <td>
+                    ${item.making_charge_type === 'percent' && item.making_charge_rate ? `${item.making_charge_rate}%<br>(Rs. ${item.making_charges?.toLocaleString('en-IN', {minimumFractionDigits: 0})})` : 
+                      item.making_charge_type === 'per_gm' && item.making_charge_rate ? `Rs. ${item.making_charge_rate}/g<br>(Rs. ${item.making_charges?.toLocaleString('en-IN', {minimumFractionDigits: 0})})` : 
+                      item.making_charges ? `Rs. ${item.making_charges.toLocaleString('en-IN', {minimumFractionDigits: 2})}` : '-'
+                    }
+                  </td>
+                  <td>Rs. ${item.hallmark_charges?.toFixed(1) || '0.0'}</td>
+                  <td>Rs. ${item.other_charges?.toFixed(1) || '0.0'}</td>
+                  <td>Rs. ${item.final_price.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -218,21 +268,21 @@ export default function InvoiceHistory() {
           <div class="totals">
             <div class="totals-row">
               <span>Subtotal:</span>
-              <span>₹ ${data.totals.subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+              <span>Rs. ${data.totals.subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
             </div>
             <div class="totals-row">
               <span>Tax (GST 3%):</span>
-              <span>₹ ${data.totals.tax_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+              <span>Rs. ${data.totals.tax_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
             </div>
             ${data.totals.discount_amount > 0 ? `
               <div class="totals-row">
-                <span>Discount:</span>
-                <span>- ₹ ${data.totals.discount_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                <span>${isExchange ? 'Less Trade-in Value:' : 'Discount:'}</span>
+                <span>- Rs. ${data.totals.discount_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
               </div>
             ` : ''}
             <div class="totals-row grand-total">
               <span>Grand Total:</span>
-              <span>₹ ${data.totals.grand_total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+              <span>Rs. ${data.totals.grand_total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
             </div>
           </div>
           
@@ -266,8 +316,30 @@ export default function InvoiceHistory() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-primary">Invoice History</h1>
-          <p className="text-sm text-textMuted mt-1">View and manage all generated invoices</p>
+          <p className="text-sm text-textMuted mt-1">View and manage all generated invoices across categories</p>
         </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex border-b border-gray-800">
+        <button 
+          onClick={() => { setTab('sales'); setCurrentPage(1); }}
+          className={`px-6 py-3 font-bold uppercase tracking-wider text-sm transition-colors ${tab === 'sales' ? 'text-primary border-b-2 border-primary' : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'}`}
+        >
+          Sales Invoices
+        </button>
+        <button 
+          onClick={() => { setTab('purchases'); setCurrentPage(1); }}
+          className={`px-6 py-3 font-bold uppercase tracking-wider text-sm transition-colors ${tab === 'purchases' ? 'text-primary border-b-2 border-primary' : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'}`}
+        >
+          Purchases Invoices
+        </button>
+        <button 
+          onClick={() => { setTab('exchanges'); setCurrentPage(1); }}
+          className={`px-6 py-3 font-bold uppercase tracking-wider text-sm transition-colors ${tab === 'exchanges' ? 'text-primary border-b-2 border-primary' : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'}`}
+        >
+          Exchange Invoices
+        </button>
       </div>
 
       {/* Filters */}
@@ -339,10 +411,10 @@ export default function InvoiceHistory() {
                     <td className="p-4 text-sm text-textMain">
                       {new Date(invoice.invoice_date).toLocaleDateString('en-IN')}
                     </td>
-                    <td className="p-4 text-sm text-textMain">{invoice.customer?.name || 'Walk-in'}</td>
-                    <td className="p-4 text-sm text-textMuted">{invoice.customer?.phone || '-'}</td>
+                    <td className="p-4 text-sm text-textMain">{invoice.customer ? `${invoice.customer.first_name} ${invoice.customer.last_name || ''}`.trim() : 'Walk-in'}</td>
+                    <td className="p-4 text-sm text-textMuted">{invoice.customer?.phone_number || '-'}</td>
                     <td className="p-4 text-sm font-semibold text-right text-textMain">
-                      ₹ {invoice.grand_total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      Rs. {invoice.grand_total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </td>
                     <td className="p-4">
                       <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadge(invoice.status)}`}>
@@ -379,7 +451,7 @@ export default function InvoiceHistory() {
                         >
                           <MessageCircle size={16} />
                         </button>
-                        {invoice.status !== 'Cancelled' && (
+                        {invoice.status !== 'Cancelled' && tab === 'sales' && (
                           <button
                             onClick={() => handleDelete(invoice)}
                             className="p-2 hover:bg-red-500/20 rounded text-red-400 transition-colors"
@@ -447,11 +519,11 @@ export default function InvoiceHistory() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-xs text-gray-500">Name</p>
-                    <p className="text-sm text-textMain">{selectedInvoice.customer?.name || 'Walk-in'}</p>
+                    <p className="text-sm text-textMain">{selectedInvoice.customer ? `${selectedInvoice.customer.first_name} ${selectedInvoice.customer.last_name || ''}`.trim() : 'Walk-in'}</p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500">Phone</p>
-                    <p className="text-sm text-textMain">{selectedInvoice.customer?.phone || '-'}</p>
+                    <p className="text-sm text-textMain">{selectedInvoice.customer?.phone_number || '-'}</p>
                   </div>
                 </div>
               </div>
@@ -467,7 +539,7 @@ export default function InvoiceHistory() {
                         <p className="text-xs text-textMuted">{item.item_type}</p>
                       </div>
                       <p className="text-sm font-bold text-primary">
-                        ₹ {item.final_price.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        Rs. {item.final_price.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </p>
                     </div>
                   ))}
@@ -479,21 +551,21 @@ export default function InvoiceHistory() {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-textMuted">Subtotal</span>
-                    <span className="text-textMain">₹ {selectedInvoice.subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <span className="text-textMain">Rs. {selectedInvoice.subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-textMuted">Tax (GST)</span>
-                    <span className="text-textMain">₹ {selectedInvoice.tax_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <span className="text-textMain">Rs. {selectedInvoice.tax_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
                   {selectedInvoice.discount_amount > 0 && (
                     <div className="flex justify-between text-sm">
                       <span className="text-textMuted">Discount</span>
-                      <span className="text-textMain">- ₹ {selectedInvoice.discount_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                      <span className="text-textMain">- Rs. {selectedInvoice.discount_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-lg font-bold pt-2 border-t border-gray-800">
                     <span className="text-textMain">Grand Total</span>
-                    <span className="text-primary">₹ {selectedInvoice.grand_total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <span className="text-primary">Rs. {selectedInvoice.grand_total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
                 </div>
               </div>

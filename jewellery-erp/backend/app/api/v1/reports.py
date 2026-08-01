@@ -112,3 +112,44 @@ def get_supplier_report(
         "total": total_suppliers, 
         "payables": abs(float(Decimal(str(total_payables))))
     }
+
+@router.get("/expenses")
+def get_expenses_report(
+    start_date: Optional[date] = Query(None),
+    end_date: Optional[date] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get expenses report grouped by category."""
+    from app.models.expense import Expense as ExpenseModel
+    from sqlalchemy import func
+    
+    query = db.query(ExpenseModel)
+    if start_date:
+        query = query.filter(ExpenseModel.expense_date >= start_date)
+    if end_date:
+        query = query.filter(ExpenseModel.expense_date <= end_date)
+    
+    expenses = query.all()
+    total = sum(float(e.amount) for e in expenses)
+    
+    # Group by category
+    category_totals = {}
+    for e in expenses:
+        cat = e.category or "Misc"
+        category_totals[cat] = category_totals.get(cat, 0) + float(e.amount)
+    
+    return {
+        "total_expenses": total,
+        "by_category": category_totals,
+        "expenses": [
+            {
+                "id": e.id,
+                "category": e.category,
+                "amount": float(e.amount),
+                "description": e.description,
+                "date": str(e.expense_date)
+            }
+            for e in expenses
+        ]
+    }

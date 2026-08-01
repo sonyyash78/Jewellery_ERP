@@ -64,10 +64,25 @@ def client(db_session):
 @pytest.fixture
 def create_test_role(db_session):
     """Create test roles and return their IDs."""
-    admin_role = Role(name="Admin", description="Administrator role")
-    user_role = Role(name="User", description="Regular user role")
-    db_session.add_all([admin_role, user_role])
-    db_session.commit()
+    # Check if Admin role already exists (from seed)
+    admin_role = db_session.query(Role).filter(Role.name == "Admin").first()
+    if not admin_role:
+        admin_role = Role(name="Admin", description="Administrator role")
+        db_session.add(admin_role)
+        db_session.commit()
+        db_session.refresh(admin_role)
+    else:
+        db_session.refresh(admin_role)
+    
+    user_role = db_session.query(Role).filter(Role.name == "User").first()
+    if not user_role:
+        user_role = Role(name="User", description="Regular user role")
+        db_session.add(user_role)
+        db_session.commit()
+        db_session.refresh(user_role)
+    else:
+        db_session.refresh(user_role)
+    
     return {"admin": admin_role.id, "user": user_role.id}
 
 @pytest.fixture

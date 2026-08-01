@@ -100,4 +100,32 @@ def list_exchanges(
     total = query.count()
     items = query.order_by(Exchange.id.desc()).offset(skip).limit(limit).all()
     
-    return {"total": total, "items": items}
+    results = []
+    for e in items:
+        results.append({
+            "id": e.id,
+            "invoice_number": f"EXC-{e.id}",
+            "invoice_date": e.exchange_date,
+            "grand_total": e.difference_amount,
+            "status": "Completed",
+            "customer": {
+                "first_name": e.customer.first_name if e.customer else 'Unknown',
+                "last_name": e.customer.last_name if e.customer else '',
+                "phone_number": e.customer.phone_number if e.customer else ''
+            }
+        })
+    
+    return {"total": total, "items": results}
+
+@router.get("/{id}/pdf-data")
+def get_exchange_pdf_data(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get exchange data formatted for PDF generation."""
+    try:
+        from app.services.invoice_pdf_service import InvoicePDFService
+        return InvoicePDFService.get_exchange_pdf_data(id, db)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))

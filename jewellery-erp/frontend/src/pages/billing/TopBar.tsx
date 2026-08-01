@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { axiosClient } from '../../api/axiosClient';
 import { User, Calendar, Tag, CreditCard } from 'lucide-react';
+import { useBillingStore } from '../../store/billingStore';
 
 export default function TopBar() {
   const [customers, setCustomers] = useState<any[]>([]);
-  const [selectedCustomerId, setSelectedCustomerId] = useState<number | ''>('');
+  const { selectedCustomerId, setSelectedCustomerId } = useBillingStore();
   
   useEffect(() => {
     axiosClient.get('/customers/').then(res => setCustomers(res.data.items || [])).catch(() => {});
@@ -15,11 +16,11 @@ export default function TopBar() {
       <div className="flex-1 min-w-[200px] flex items-center space-x-2 bg-background px-3 py-1.5 rounded border border-gray-700">
         <User size={16} className="text-primary" />
         <select 
-          value={selectedCustomerId}
-          onChange={(e) => setSelectedCustomerId(Number(e.target.value))}
+          value={selectedCustomerId || ''}
+          onChange={(e) => setSelectedCustomerId(e.target.value ? Number(e.target.value) : null)}
           className="bg-transparent text-sm text-textMain outline-none w-full cursor-pointer"
         >
-          <option value="">Select Customer...</option>
+          <option value="">Walk-in Customer</option>
           {customers.map(c => <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>)}
         </select>
       </div>

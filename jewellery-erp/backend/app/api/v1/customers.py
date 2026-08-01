@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Dict
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
@@ -10,6 +10,7 @@ from app.models.user import User
 from app.repositories.crm_repo import customer_repo
 from app.schemas.crm import CustomerCreate, CustomerUpdate, CustomerResponse, CustomerListResponse
 from app.models.crm import Customer
+from app.models.customer_ledger import CustomerLedger
 
 router = APIRouter(dependencies=[Depends(get_current_user)])
 
@@ -95,3 +96,47 @@ def delete_customer(
         raise HTTPException(status_code=404, detail="Customer not found")
     customer_repo.remove(db=db, id=id)
     return {"ok": True}
+
+
+@router.get("/{id}/ledger")
+def get_customer_ledger(
+    id: int, 
+    db: Session = Depends(get_db)
+):
+    entries = db.query(CustomerLedger).filter(CustomerLedger.customer_id == id).order_by(CustomerLedger.date.desc(), CustomerLedger.id.desc()).all()
+    return entries
+
+
+@router.post("/{id}/ledger")
+def add_customer_ledger_entry(
+    id: int, 
+    entry: Dict[str, Any], 
+    db: Session = Depends(get_db)
+):
+    customer = db.query(Customer).filter(Customer.id == id).first()
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+        
+    debit = float(entry.get('debit') or 0) # Customer owes us (e.g. Bill)
+    credit = float(entry.get('credit') or 0) # Customer paid us (e.g. Cash received)
+    
+    # Update balance: Outstanding = Old Outstanding + Debit (Bill) - Credit (Payment)
+    # Wait, if they owe us, outstanding increases. If they pay us, outstanding decreases.
+    customer.outstanding_balance = float(customer.outstanding_balance or 0) + debit - credit
+    
+    ledger = CustomerLedger(
+        customer_id=id,
+        voucher_type=entry.get('voucher_type', 'Manual'),
+        voucher_number=entry.get('voucher_number'),
+        description=entry.get('description'),
+        debit=debit,
+        credit=credit,
+        balance=customer.outstanding_balance
+    )
+    
+    db.add(ledger)
+    db.commit()
+    db.refresh(ledger)
+    db.refresh(customer)
+    
+    return {"ledger": ledger, "new_balance": customer.outstanding_balance}

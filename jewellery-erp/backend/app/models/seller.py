@@ -12,7 +12,8 @@ class Seller(Base):
     address: Mapped[str] = mapped_column(String(255), nullable=True)
     city: Mapped[str] = mapped_column(String(100), nullable=True)
     gst_number: Mapped[str] = mapped_column(String(20), nullable=True)
-    outstanding_balance: Mapped[float] = mapped_column(Integer, default=0) # positive means we owe them
+    from sqlalchemy import DECIMAL
+    outstanding_balance: Mapped[float] = mapped_column(DECIMAL(12, 2), default=0) # positive means we owe them
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
     purchases: Mapped[List['Purchase']] = relationship('Purchase', back_populates='seller')

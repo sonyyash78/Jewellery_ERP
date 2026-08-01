@@ -11,6 +11,20 @@ from app.core.config import settings
 
 router = APIRouter(dependencies=[Depends(get_current_user)])
 
+@router.get("/", response_model=List[InventoryResponse])
+def list_inventory(
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 100,
+    search: str = None,
+) -> Any:
+    """List all inventory items. Supports ?search= query."""
+    if search:
+        return [i for i in inventory_repo.get_multi(db, skip=skip, limit=limit) if search.lower() in i.item_name.lower()]
+    return inventory_repo.get_multi(db, skip=skip, limit=limit)
+
+
+
 @router.get("/categories", response_model=List[CategoryResponse])
 def get_categories(
     db: Session = Depends(get_db),

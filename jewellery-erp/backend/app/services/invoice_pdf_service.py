@@ -9,17 +9,19 @@ from app.models.invoice import Invoice
 from app.models.invoice_item import InvoiceItem
 from app.models.gold_calculation import GoldCalculation
 from app.models.silver_calculation import SilverCalculation
+from app.models.purchase import Purchase
+from app.models.exchange import Exchange
 from app.services.calculation_service import CalculationService
 
 
 class InvoicePDFService:
     """Service to generate invoice PDF data for frontend rendering."""
     
-    COMPANY_NAME = "JEWELLERY ERP"
-    COMPANY_ADDRESS = "Your Address Here"
-    COMPANY_PHONE = "+91 1234567890"
-    COMPANY_EMAIL = "info@jewelleryerp.com"
-    COMPANY_GSTIN = "22AAAAA0000A1Z5"
+    COMPANY_NAME = "SAIDEEP JEWELLERS"
+    COMPANY_ADDRESS = "Takhatgarh khedawas"
+    COMPANY_PHONE = "8504837854"
+    COMPANY_EMAIL = ""
+    COMPANY_GSTIN = ""
     
     @staticmethod
     def get_invoice_pdf_data(invoice_id: int, db: Session) -> Dict[str, Any]:
@@ -62,8 +64,8 @@ class InvoicePDFService:
         
         # Customer details
         customer_data = {
-            'name': invoice.customer.name if invoice.customer else 'Walk-in Customer',
-            'phone': invoice.customer.phone if invoice.customer else '',
+            'name': f"{invoice.customer.first_name} {invoice.customer.last_name or ''}".strip() if invoice.customer else 'Walk-in Customer',
+            'phone': invoice.customer.phone_number if invoice.customer else '',
             'email': invoice.customer.email if invoice.customer else '',
             'address': invoice.customer.address if invoice.customer else ''
         }
@@ -89,8 +91,11 @@ class InvoicePDFService:
                     'stone_weight': float(gold_calc.stone_weight),
                     'net_weight': float(gold_calc.net_weight),
                     'making_charges': float(gold_calc.making_charges_amount),
+                    'making_charge_type': gold_calc.making_charge_type,
+                    'making_charge_rate': float(gold_calc.making_charge_rate),
                     'hallmark_charges': float(gold_calc.hallmark_charges),
-                    'metal_value': float(gold_calc.total_gold_value)
+                    'metal_value': float(gold_calc.total_gold_value),
+                    'applied_rate': float(gold_calc.applied_rate)
                 })
             
             # Add silver calculation details if present
@@ -105,7 +110,10 @@ class InvoicePDFService:
                     'pure_weight': float(silver_calc.pure_weight),
                     'tanch_percentage': float(silver_calc.tanch_percentage),
                     'making_charges': float(silver_calc.making_charges_amount),
-                    'metal_value': float(silver_calc.total_silver_value)
+                    'making_charge_type': silver_calc.making_charge_type,
+                    'making_charge_rate': float(silver_calc.making_charge_rate),
+                    'metal_value': float(silver_calc.total_silver_value),
+                    'applied_rate': float(silver_calc.applied_rate)
                 })
             
             items_data.append(item_dict)
@@ -130,9 +138,196 @@ class InvoicePDFService:
         }
         
         return {
+            'type': 'sale',
             'invoice': invoice_data,
             'customer': customer_data,
             'items': items_data,
+            'company': company,
+            'totals': totals
+        }
+
+    @staticmethod
+    def get_purchase_pdf_data(purchase_id: int, db: Session) -> Dict[str, Any]:
+        """
+        Get purchase data formatted for PDF generation.
+        """
+        purchase = db.query(Purchase).filter(Purchase.id == purchase_id).first()
+        if not purchase:
+            raise ValueError(f"Purchase {purchase_id} not found")
+        
+        company = {
+            'name': InvoicePDFService.COMPANY_NAME,
+            'address': InvoicePDFService.COMPANY_ADDRESS,
+            'phone': InvoicePDFService.COMPANY_PHONE,
+            'email': InvoicePDFService.COMPANY_EMAIL,
+            'gstin': InvoicePDFService.COMPANY_GSTIN
+        }
+        
+        invoice_data = {
+            'invoice_number': purchase.purchase_number,
+            'invoice_date': purchase.created_at.strftime('%d-%m-%Y'),
+            'status': purchase.status.value,
+            'subtotal': float(purchase.total_taxable),
+            'tax_amount': float(purchase.cgst + purchase.sgst + purchase.igst),
+            'discount_amount': 0.0,
+            'grand_total': float(purchase.grand_total)
+        }
+        
+        customer_data = {
+            'name': purchase.seller.name if purchase.seller else 'Unknown Seller',
+            'phone': purchase.seller.mobile if purchase.seller else '',
+            'email': '',
+            'address': purchase.seller.address if purchase.seller else ''
+        }
+        
+        items_data = []
+        for item in purchase.items:
+            items_data.append({
+                'item_name': item.item_name,
+                'metal_type': item.metal_type,
+                'gross_weight': float(item.gross_weight),
+                'stone_weight': float(item.stone_weight),
+                'net_weight': float(item.net_weight),
+                'pure_weight': float(item.fine_weight),
+                'tanch_percentage': float(item.touch_purity),
+                'making_charges': float(item.labour_charge + item.testing_melting_charge + item.hallmark_charge + item.other_charges),
+                'metal_value': float(item.metal_value),
+                'applied_rate': float(item.metal_rate),
+                'final_price': float(item.taxable_amount)
+            })
+            
+        total_weight = sum(item.get('net_weight', 0) for item in items_data)
+        totals = {
+            'total_items': len(items_data),
+            'total_weight': float(total_weight),
+            'subtotal': float(purchase.total_taxable),
+            'tax_amount': float(purchase.cgst + purchase.sgst + purchase.igst),
+            'discount_amount': 0.0,
+            'grand_total': float(purchase.grand_total)
+        }
+        
+        return {
+            'type': 'purchase',
+            'invoice': invoice_data,
+            'customer': customer_data,
+            'items': items_data,
+            'company': company,
+            'totals': totals
+        }
+
+    @staticmethod
+    def get_exchange_pdf_data(exchange_id: int, db: Session) -> Dict[str, Any]:
+        """
+        Get exchange data formatted for PDF generation.
+        """
+        exchange = db.query(Exchange).filter(Exchange.id == exchange_id).first()
+        if not exchange:
+            raise ValueError(f"Exchange {exchange_id} not found")
+        
+        company = {
+            'name': InvoicePDFService.COMPANY_NAME,
+            'address': InvoicePDFService.COMPANY_ADDRESS,
+            'phone': InvoicePDFService.COMPANY_PHONE,
+            'email': InvoicePDFService.COMPANY_EMAIL,
+            'gstin': InvoicePDFService.COMPANY_GSTIN
+        }
+        
+        invoice_data = {
+            'invoice_number': f"EXC-{exchange.id}",
+            'invoice_date': exchange.exchange_date.strftime('%d-%m-%Y'),
+            'status': "Completed",
+            'subtotal': float(exchange.total_new_value),
+            'tax_amount': float(exchange.gst_amount),
+            'discount_amount': float(exchange.total_old_value), # We use discount for trade-in value in old format, but better pass specifically
+            'grand_total': float(exchange.difference_amount),
+            'total_old_value': float(exchange.total_old_value),
+            'total_new_value': float(exchange.total_new_value),
+            'difference_amount': float(exchange.difference_amount)
+        }
+        
+        customer_data = {
+            'name': f"{exchange.customer.first_name} {exchange.customer.last_name or ''}".strip() if exchange.customer else 'Unknown Customer',
+            'phone': exchange.customer.phone_number if exchange.customer else '',
+            'email': exchange.customer.email if exchange.customer else '',
+            'address': exchange.customer.address if exchange.customer else ''
+        }
+        
+        old_items_data = []
+        for item in exchange.old_items:
+            old_items_data.append({
+                'item_name': item.item_name,
+                'metal_type': item.metal,
+                'gross_weight': float(item.gross_weight),
+                'stone_weight': float(item.stone_weight),
+                'net_weight': float(item.net_weight),
+                'tanch_percentage': float(item.touch),
+                'applied_rate': float(item.rate_applied),
+                'final_price': float(item.calculated_value)
+            })
+
+        new_items_data = []
+        for item in exchange.new_items:
+            stock = item.stock_item
+            
+            # Extract fields if stock exists, else defaults
+            gross_weight = float(stock.gross_weight) if stock else float(item.net_weight)
+            stone_weight = float(stock.stone_weight) if stock else 0.0
+            
+            making_type = (stock.making_type or 'flat').lower() if stock else 'flat'
+            raw_making = float(stock.making_charge) if stock else 0.0
+            hallmark = float(stock.hallmark) if stock else 0.0
+            other = float(stock.other_charges) if stock else 0.0
+            
+            final_p = float(item.final_price)
+            net_wt = float(item.net_weight)
+            
+            # Calculate total making charges and derive metal value and rate
+            if making_type == 'percent':
+                making_charge_rate = raw_making
+                # final_p = metal_val + metal_val * (rate/100) + hallmark + other
+                metal_value = (final_p - hallmark - other) / (1 + making_charge_rate / 100) if (1 + making_charge_rate / 100) > 0 else 0
+                making_charges = metal_value * (making_charge_rate / 100)
+            elif making_type == 'per_gram':
+                making_charge_rate = raw_making
+                making_charges = making_charge_rate * net_wt
+                metal_value = final_p - making_charges - hallmark - other
+            else: # flat
+                making_charge_rate = None
+                making_charges = raw_making
+                metal_value = final_p - making_charges - hallmark - other
+                
+            applied_rate = metal_value / net_wt if net_wt > 0 else 0.0
+
+            new_items_data.append({
+                'item_name': item.item_name,
+                'metal_type': item.metal,
+                'gross_weight': gross_weight,
+                'stone_weight': stone_weight,
+                'net_weight': net_wt,
+                'making_charge_type': making_type,
+                'making_charge_rate': making_charge_rate,
+                'making_charges': making_charges,
+                'hallmark_charges': hallmark,
+                'other_charges': other,
+                'applied_rate': applied_rate,
+                'final_price': final_p
+            })
+            
+        totals = {
+            'total_items': len(old_items_data) + len(new_items_data),
+            'total_weight': float(sum(item.get('net_weight', 0) for item in new_items_data)),
+            'subtotal': float(exchange.total_new_value),
+            'tax_amount': float(exchange.gst_amount),
+            'discount_amount': float(exchange.total_old_value),
+            'grand_total': float(exchange.difference_amount)
+        }
+        
+        return {
+            'type': 'exchange',
+            'invoice': invoice_data,
+            'customer': customer_data,
+            'items': new_items_data,
+            'old_items': old_items_data,
             'company': company,
             'totals': totals
         }
