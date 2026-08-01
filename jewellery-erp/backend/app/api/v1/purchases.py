@@ -202,6 +202,54 @@ def get_purchase_pdf_data(
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
+@router.get("/{id}")
+def get_unified_purchase(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get a single unified purchase formatted for the Invoice View Modal."""
+    purchase = db.query(Purchase).filter(Purchase.id == id).first()
+    if not purchase:
+        raise HTTPException(status_code=404, detail="Purchase not found")
+        
+    return {
+        "id": purchase.id,
+        "invoice_number": purchase.purchase_number,
+        "customer": {
+            "first_name": purchase.seller.name if purchase.seller else "Unknown",
+            "last_name": "",
+            "phone_number": purchase.seller.mobile if purchase.seller else ""
+        },
+        "items": [
+            {
+                "item_name": item.item_name,
+                "item_type": item.metal_type,
+                "final_price": item.metal_value + item.labour_charge + item.testing_melting_charge + item.hallmark_charge + item.other_charges - item.discount
+            }
+            for item in purchase.items
+        ],
+        "subtotal": purchase.total_taxable,
+        "tax_amount": purchase.cgst + purchase.sgst + purchase.igst,
+        "discount_amount": sum(i.discount for i in purchase.items),
+        "grand_total": purchase.grand_total
+    }
+
+
+@router.delete("/{id}")
+def delete_unified_purchase(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Soft delete (cancel) a unified purchase."""
+    purchase = db.query(Purchase).filter(Purchase.id == id).first()
+    if not purchase:
+        raise HTTPException(status_code=404, detail="Purchase not found")
+        
+    purchase.status = PurchaseStatus.CANCELLED
+    db.commit()
+    return {"message": "Purchase cancelled successfully"}
 
 @router.get("/gold", response_model=List[GoldPurchaseResponse])
 def get_gold_purchases(

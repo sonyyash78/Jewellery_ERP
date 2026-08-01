@@ -17,6 +17,16 @@ def get_dashboard_metrics(
     """
     return ReportService.get_dashboard_metrics(db)
 
+@router.get("/chart-data")
+def get_dashboard_charts(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get dashboard charts data: sales trend and top categories.
+    """
+    return ReportService.get_dashboard_charts_data(db)
+
 @router.get("/recent-activity")
 def get_recent_activity(
     db: Session = Depends(get_db),

@@ -15,7 +15,7 @@ export default function OldItemsForm() {
   const [rateApplied, setRateApplied] = useState(7245);
 
   const netWeight = grossWeight - stoneWeight;
-  const calculatedValue = metal === 'Gold' ? (netWeight * rateApplied * (touch / 100)) : ((netWeight / 1000) * rateApplied * (touch / 100));
+  const calculatedValue = netWeight * rateApplied * (touch / 100);
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +54,7 @@ export default function OldItemsForm() {
         </div>
         <div>
           <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Stone Wt (g)</label>
-          <input required type="number" step="0.001" value={stoneWeight || ''} onChange={e=>setStoneWeight(Number(e.target.value))} className="w-full bg-background border border-gray-700 rounded p-2 text-sm text-textMain focus:border-primary outline-none font-mono" />
+          <input type="number" step="0.001" value={stoneWeight || ''} onChange={e=>setStoneWeight(Number(e.target.value))} className="w-full bg-background border border-gray-700 rounded p-2 text-sm text-textMain focus:border-primary outline-none font-mono" />
         </div>
         
         <div>

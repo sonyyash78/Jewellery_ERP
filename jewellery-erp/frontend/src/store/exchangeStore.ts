@@ -19,6 +19,10 @@ export interface NewItem {
   itemName: string;
   metal: string;
   netWeight: number;
+  rateApplied: number;
+  makingCharges: number;
+  hallmark: number;
+  otherCharges: number;
   finalPrice: number;
 }
 

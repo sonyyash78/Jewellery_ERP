@@ -7,7 +7,7 @@ import PostBillModal from './PostBillModal';
 import LiveRatesModal from './LiveRatesModal';
 
 export default function LiveBillSummary() {
-  const { cart, gstState, clearCart, selectedCustomerId } = useBillingStore();
+  const { cart, gstState, clearCart, selectedCustomerId, liveRates } = useBillingStore();
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showRatesModal, setShowRatesModal] = useState(false);
@@ -35,6 +35,9 @@ export default function LiveBillSummary() {
   const exactTotal = taxableAmount + cgst + sgst + igst;
   const grandTotal = Math.round(exactTotal);
   const roundOff = grandTotal - exactTotal;
+
+  const equivalentGold = liveRates.gold24k > 0 ? grandTotal / liveRates.gold24k : 0;
+  const equivalentSilver = liveRates.silver > 0 ? grandTotal / (liveRates.silver / 10) : 0;
 
   const handleGenerate = async () => {
     if (cart.length === 0) {
@@ -151,10 +154,23 @@ export default function LiveBillSummary() {
       </div>
 
       <div className="mt-4 pt-3 border-t border-gray-800">
-        <div className="bg-[#052e16] border border-[#166534] rounded flex justify-between items-center px-3 py-2 mb-4 shadow-[0_0_10px_rgba(22,101,52,0.3)]">
+        <div className="bg-[#052e16] border border-[#166534] rounded flex justify-between items-center px-3 py-2 mb-2 shadow-[0_0_10px_rgba(22,101,52,0.3)]">
           <span className="text-green-500 font-bold tracking-widest text-xs uppercase">Grand Total</span>
           <span className="text-2xl font-black text-green-400 tracking-tighter">₹ {grandTotal.toLocaleString()}</span>
         </div>
+
+        {grandTotal > 0 && (
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            <div className="bg-[#1a1500] border border-[#4d3d00] rounded p-2 flex justify-between items-center">
+              <span className="text-yellow-600/80 font-bold text-[9px] uppercase tracking-wider">Or Gold (24K)</span>
+              <span className="text-yellow-500 font-mono font-bold text-sm">{equivalentGold.toFixed(3)}g</span>
+            </div>
+            <div className="bg-[#0a1128] border border-[#1a2d66] rounded p-2 flex justify-between items-center">
+              <span className="text-blue-500/80 font-bold text-[9px] uppercase tracking-wider">Or Silver (Fine)</span>
+              <span className="text-blue-400 font-mono font-bold text-sm">{equivalentSilver.toFixed(3)}g</span>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-2 text-xs">
           <button className="flex items-center justify-center space-x-1 bg-background border border-gray-700 hover:border-gray-500 py-2 rounded transition-colors"><Save size={14}/> <span>Draft</span></button>

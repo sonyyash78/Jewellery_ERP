@@ -29,3 +29,13 @@ export const getMetalRates = async () => {
   const res = await axiosClient.get('/metal-rates/latest');
   return res.data;
 };
+
+export interface ChartData {
+  sales_trend: { name: string; sales: number }[];
+  top_categories: { name: string; qty: number }[];
+}
+
+export const getChartData = async (): Promise<ChartData> => {
+  const res = await axiosClient.get('/dashboard/chart-data');
+  return res.data;
+};

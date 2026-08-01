@@ -70,8 +70,6 @@ export default function InventoryForm({ onClose, onSaveSuccess }: { onClose: () 
                 <select value={form.metal} onChange={e=>setForm({...form, metal: e.target.value})} className="w-full bg-background border border-gray-700 rounded px-3 py-2 text-sm text-textMain focus:border-primary outline-none appearance-none">
                   <option value="Gold">Gold</option>
                   <option value="Silver">Silver</option>
-                  <option value="Platinum">Platinum</option>
-                  <option value="Diamond">Diamond</option>
                 </select>
               </div>
               <div><InputLabel label="Purity" /><input value={form.purity} onChange={e=>setForm({...form, purity: e.target.value})} className="w-full bg-background border border-gray-700 rounded px-3 py-2 text-sm text-textMain focus:border-primary outline-none" placeholder="e.g. 22K916" /></div>
@@ -79,13 +77,15 @@ export default function InventoryForm({ onClose, onSaveSuccess }: { onClose: () 
             </div>
           </div>
 
-          {/* Section 2: Weight */}
+          {/* Section 2: Weight & Purity */}
           <div>
-            <h3 className="text-sm font-bold text-gray-300 border-b border-gray-800 pb-2 mb-3">Weight Details</h3>
-            <div className="grid grid-cols-3 gap-4">
+            <h3 className="text-sm font-bold text-gray-300 border-b border-gray-800 pb-2 mb-3">Weight & Purity Details</h3>
+            <div className="grid grid-cols-5 gap-4">
               <div><InputLabel label="Gross Wt(g) *" /><input type="number" value={form.gross_weight} onChange={e=>setForm({...form, gross_weight: e.target.value})} className="w-full bg-background border border-gray-700 rounded px-3 py-2 text-sm text-textMain focus:border-primary outline-none font-mono" /></div>
               <div><InputLabel label="Stone Wt(g)" /><input type="number" value={form.stone_weight} onChange={e=>setForm({...form, stone_weight: e.target.value})} className="w-full bg-background border border-gray-700 rounded px-3 py-2 text-sm text-textMain focus:border-primary outline-none font-mono" /></div>
               <div><InputLabel label="Net Wt(g)" /><input disabled value={netWeight.toFixed(3)} className="w-full bg-gray-900 border border-gray-800 rounded px-3 py-2 text-sm text-primary font-bold outline-none font-mono cursor-not-allowed" /></div>
+              <div><InputLabel label="Tanch (%)" /><input type="number" value={form.tanch} onChange={e=>setForm({...form, tanch: e.target.value})} className="w-full bg-background border border-gray-700 rounded px-3 py-2 text-sm text-textMain focus:border-primary outline-none font-mono" placeholder="e.g. 91.6" /></div>
+              <div><InputLabel label="Fine Wt(g)" /><input disabled value={((netWeight * (Number(form.tanch) || 0)) / 100).toFixed(3)} className="w-full bg-gray-900 border border-gray-800 rounded px-3 py-2 text-sm text-green-400 font-bold outline-none font-mono cursor-not-allowed" /></div>
             </div>
           </div>
 

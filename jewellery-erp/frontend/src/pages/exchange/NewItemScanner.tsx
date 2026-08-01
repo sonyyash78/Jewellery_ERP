@@ -8,6 +8,8 @@ export default function NewItemScanner() {
   const { addNewItem, newItems } = useExchangeStore();
   const [manualCode, setManualCode] = useState('');
   const [loading, setLoading] = useState(false);
+  const [goldRate, setGoldRate] = useState(7245);
+  const [silverRate, setSilverRate] = useState(85);
 
   const handleManualSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,14 +33,9 @@ export default function NewItemScanner() {
       }
 
       const isGold = item.metal.toLowerCase() === 'gold';
-      const metalRate = isGold ? 7245 : 90000;
+      const metalRate = isGold ? goldRate : silverRate;
       
-      let metalValue = 0;
-      if (isGold) {
-        metalValue = item.net_weight * metalRate;
-      } else {
-        metalValue = (item.net_weight / 1000) * metalRate;
-      }
+      const metalValue = item.net_weight * metalRate;
 
       const makingAmount = item.making_type === 'flat' 
         ? item.making_charge 
@@ -55,6 +52,10 @@ export default function NewItemScanner() {
         itemName: item.item_name,
         metal: item.metal,
         netWeight: item.net_weight,
+        rateApplied: metalRate,
+        makingCharges: makingAmount,
+        hallmark,
+        otherCharges,
         finalPrice
       });
 
@@ -79,6 +80,16 @@ export default function NewItemScanner() {
       <h2 className="text-primary font-bold uppercase tracking-wider text-sm">Purchase New Item</h2>
       
       <form onSubmit={handleManualSubmit} className="flex flex-col gap-4 items-center justify-center py-6">
+        <div className="flex gap-4 w-full mb-2">
+          <div className="flex-1">
+            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Gold Live Rate /g (₹)</label>
+            <input type="number" value={goldRate} onChange={e=>setGoldRate(Number(e.target.value))} className="w-full bg-background border border-gray-700 rounded p-2 text-sm text-primary font-bold focus:border-primary outline-none" />
+          </div>
+          <div className="flex-1">
+            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Silver Live Rate /g (₹)</label>
+            <input type="number" value={silverRate} onChange={e=>setSilverRate(Number(e.target.value))} className="w-full bg-background border border-gray-700 rounded p-2 text-sm text-primary font-bold focus:border-primary outline-none" />
+          </div>
+        </div>
         <ScanLine size={48} className="text-primary/30" />
         <p className="text-sm text-textMuted text-center">Scan barcode or enter code to add a new inventory item to this exchange.</p>
         

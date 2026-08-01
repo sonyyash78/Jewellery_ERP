@@ -304,3 +304,59 @@ class ReportService:
             'inventory_weight': inventory_report['total_weight'],
             'low_stock_count': 0  # TODO: Implement low stock threshold
         }
+
+    @staticmethod
+    def get_dashboard_charts_data(db: Session) -> Dict[str, any]:
+        """
+        Generate data for dashboard charts: Sales Trend (last 7 days) and Top Selling Categories.
+        """
+        from datetime import date, timedelta
+        from sqlalchemy import func
+        from app.models.invoice import Invoice
+        from app.models.invoice_item import InvoiceItem
+        
+        today = date.today()
+        
+        # 1. Sales Trend (Last 7 Days)
+        sales_trend = []
+        for i in range(6, -1, -1):
+            target_date = today - timedelta(days=i)
+            # Daily sales query
+            daily_total = db.query(func.sum(Invoice.grand_total)).filter(
+                func.date(Invoice.invoice_date) == target_date
+            ).scalar() or 0
+            
+            sales_trend.append({
+                "name": target_date.strftime("%a"), # e.g. 'Mon', 'Tue'
+                "sales": float(daily_total)
+            })
+            
+        # 2. Top Selling Categories (All time or last 30 days)
+        # Using item_name as a proxy for category if category doesn't exist, 
+        # or we can try to group by metal_type / item_type. 
+        # Looking at InvoiceItem, we have item_type and item_name.
+        thirty_days_ago = today - timedelta(days=30)
+        top_items = db.query(
+            InvoiceItem.item_name, 
+            func.count(InvoiceItem.id).label('qty')
+        ).join(Invoice, Invoice.id == InvoiceItem.invoice_id).filter(
+            func.date(Invoice.invoice_date) >= thirty_days_ago
+        ).group_by(InvoiceItem.item_name).order_by(func.count(InvoiceItem.id).desc()).limit(5).all()
+        
+        top_categories = []
+        for item in top_items:
+            top_categories.append({
+                "name": item.item_name,
+                "qty": item.qty
+            })
+            
+        # Fallback if no data
+        if not top_categories:
+            top_categories = [
+                {"name": "No data yet", "qty": 0}
+            ]
+            
+        return {
+            "sales_trend": sales_trend,
+            "top_categories": top_categories
+        }

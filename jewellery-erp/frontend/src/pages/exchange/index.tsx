@@ -91,6 +91,7 @@ export default function ExchangeModule() {
                     <th className="py-2 px-3">Item</th>
                     <th className="py-2 px-3">Net Wt</th>
                     <th className="py-2 px-3">Tanch</th>
+                    <th className="py-2 px-3">Rate</th>
                     <th className="py-2 px-3 text-right text-green-400">Value (₹)</th>
                     <th className="py-2 px-3"></th>
                   </tr>
@@ -101,6 +102,7 @@ export default function ExchangeModule() {
                       <td className="py-2 px-3 font-bold text-textMain">{item.itemName}</td>
                       <td className="py-2 px-3">{item.netWeight}g</td>
                       <td className="py-2 px-3">{item.touch}%</td>
+                      <td className="py-2 px-3">₹ {item.rateApplied}</td>
                       <td className="py-2 px-3 text-right font-mono text-green-400">{item.calculatedValue.toLocaleString(undefined, {maximumFractionDigits:2})}</td>
                       <td className="py-2 px-3 text-right">
                         <button onClick={() => removeOldItem(item.id)} className="text-red-400 hover:text-red-300"><Trash2 size={14}/></button>
@@ -130,16 +132,22 @@ export default function ExchangeModule() {
                   <tr>
                     <th className="py-2 px-3">Item</th>
                     <th className="py-2 px-3">Net Wt</th>
-                    <th className="py-2 px-3 text-right text-red-400">Price (₹)</th>
+                    <th className="py-2 px-3">Rate</th>
+                    <th className="py-2 px-3">Making</th>
+                    <th className="py-2 px-3">Other</th>
+                    <th className="py-2 px-3 text-right text-red-400">Total (₹)</th>
                     <th className="py-2 px-3"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-800/50">
                   {newItems.map(item => (
-                    <tr key={item.stockItemId} className="hover:bg-gray-800/30">
+                    <tr key={item.stockItemId} className="hover:bg-gray-800/30 text-[11px]">
                       <td className="py-2 px-3 font-bold text-textMain">{item.itemName}</td>
                       <td className="py-2 px-3">{item.netWeight}g</td>
-                      <td className="py-2 px-3 text-right font-mono text-red-400">{item.finalPrice.toLocaleString()}</td>
+                      <td className="py-2 px-3">₹ {item.rateApplied}</td>
+                      <td className="py-2 px-3">₹ {item.makingCharges.toLocaleString()}</td>
+                      <td className="py-2 px-3">₹ {(item.hallmark + item.otherCharges).toLocaleString()}</td>
+                      <td className="py-2 px-3 text-right font-mono text-red-400 text-sm font-bold">{item.finalPrice.toLocaleString()}</td>
                       <td className="py-2 px-3 text-right">
                         <button onClick={() => removeNewItem(item.stockItemId)} className="text-red-400 hover:text-red-300"><Trash2 size={14}/></button>
                       </td>

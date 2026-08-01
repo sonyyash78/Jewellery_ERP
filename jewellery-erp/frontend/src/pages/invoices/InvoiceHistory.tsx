@@ -53,9 +53,31 @@ export default function InvoiceHistory() {
       if (searchTerm) params.append('search', searchTerm);
       if (statusFilter) params.append('status', statusFilter);
 
-      const endpoint = tab === 'sales' ? '/invoices/' : tab === 'purchases' ? '/purchases/history' : '/exchanges/';
-      const res = await axiosClient.get(`${endpoint}?${params.toString()}`);
-      setInvoices(res.data.items || res.data); // Support both paginated forms
+      if (tab === 'sales') {
+        // Fetch both sales and exchanges for the sales tab
+        const [salesRes, exchangesRes] = await Promise.all([
+          axiosClient.get(`/invoices/?${params.toString()}`),
+          axiosClient.get(`/exchanges/?${params.toString()}`)
+        ]);
+        
+        const salesItems = salesRes.data.items || salesRes.data;
+        const allExchangeItems = exchangesRes.data.items || exchangesRes.data;
+        
+        // Only include exchanges that have new items (sales)
+        const exchangeItems = allExchangeItems.filter((item: any) => item.has_new_items !== false);
+        
+        // Merge and sort by date descending
+        const merged = [...salesItems, ...exchangeItems].sort((a, b) => {
+          return new Date(b.invoice_date).getTime() - new Date(a.invoice_date).getTime();
+        });
+        
+        // Custom slicing since we fetched paginated lists from both (might over-fetch slightly, but ensures all are seen)
+        setInvoices(merged.slice(0, itemsPerPage));
+      } else {
+        const endpoint = tab === 'purchases' ? '/purchases/history' : '/exchanges/';
+        const res = await axiosClient.get(`${endpoint}?${params.toString()}`);
+        setInvoices(res.data.items || res.data);
+      }
     } catch (error) {
       console.error('Failed to fetch invoices:', error);
       toast.error('Failed to load invoice history');
@@ -66,7 +88,9 @@ export default function InvoiceHistory() {
 
   const handleView = async (invoice: Invoice) => {
     try {
-      const res = await axiosClient.get(`/invoices/${invoice.id}`);
+      const isExchange = invoice.invoice_number.startsWith('EXC-');
+      const endpoint = isExchange ? `/exchanges/${invoice.id}` : `/invoices/${invoice.id}`;
+      const res = await axiosClient.get(endpoint);
       setSelectedInvoice(res.data);
       setShowViewModal(true);
     } catch (error) {
@@ -74,17 +98,17 @@ export default function InvoiceHistory() {
     }
   };
 
-  const getPdfEndpoint = (id: number) => {
-    if (tab === 'purchases') return `/purchases/${id}/pdf-data`;
-    if (tab === 'exchanges') return `/exchanges/${id}/pdf-data`;
-    return `/invoices/${id}/pdf-data`;
+  const getPdfEndpoint = (invoice: Invoice) => {
+    if (invoice.invoice_number.startsWith('PUR-')) return `/purchases/${invoice.id}/pdf-data`;
+    if (invoice.invoice_number.startsWith('EXC-')) return `/exchanges/${invoice.id}/pdf-data`;
+    return `/invoices/${invoice.id}/pdf-data`;
   };
 
   const handleDownloadPDF = async (invoice: Invoice) => {
     const toastId = 'pdf-gen';
     try {
       toast.loading('Generating PDF...', { id: toastId });
-      const res = await axiosClient.get(getPdfEndpoint(invoice.id));
+      const res = await axiosClient.get(getPdfEndpoint(invoice));
       if (!res.data) throw new Error('No data received from server');
       
       await generateInvoicePDF(res.data);
@@ -98,7 +122,7 @@ export default function InvoiceHistory() {
 
   const handlePrint = async (invoice: Invoice) => {
     try {
-      const res = await axiosClient.get(getPdfEndpoint(invoice.id));
+      const res = await axiosClient.get(getPdfEndpoint(invoice));
       const printWindow = window.open('', '_blank');
       if (printWindow) {
         printWindow.document.write(generatePrintHTML(res.data));
@@ -116,15 +140,17 @@ export default function InvoiceHistory() {
 
   const handleWhatsApp = async (invoice: Invoice) => {
     try {
-      const res = await axiosClient.get(getPdfEndpoint(invoice.id));
+      const res = await axiosClient.get(getPdfEndpoint(invoice));
       const phone = res.data.customer.phone?.replace(/[^0-9]/g, '');
       if (!phone) {
         toast.error('Customer phone number not available');
         return;
       }
       
+      const isExchange = invoice.invoice_number.startsWith('EXC-');
+      const isPurchase = invoice.invoice_number.startsWith('PUR-');
       const message = encodeURIComponent(
-        `Hello ${res.data.customer.name},\n\nYour ${tab === 'sales' ? 'invoice' : tab === 'purchases' ? 'purchase receipt' : 'exchange invoice'} ${res.data.invoice.invoice_number} for Rs. ${res.data.totals.grand_total.toLocaleString('en-IN')} has been generated.\n\nThank you for your business!\n\n- ${res.data.company.name}`
+        `Hello ${res.data.customer.name},\n\nYour ${isPurchase ? 'purchase receipt' : isExchange ? 'exchange invoice' : 'invoice'} ${res.data.invoice.invoice_number} for Rs. ${res.data.totals.grand_total.toLocaleString('en-IN')} has been generated.\n\nThank you for your business!\n\n- ${res.data.company.name}`
       );
       
       window.open(`https://wa.me/91${phone}?text=${message}`, '_blank');
@@ -139,7 +165,10 @@ export default function InvoiceHistory() {
     }
 
     try {
-      await axiosClient.delete(`/invoices/${invoice.id}`);
+      const isExchange = invoice.invoice_number.startsWith('EXC-');
+      const isPurchase = invoice.invoice_number.startsWith('PUR-');
+      const endpoint = isPurchase ? `/purchases/${invoice.id}` : isExchange ? `/exchanges/${invoice.id}` : `/invoices/${invoice.id}`;
+      await axiosClient.delete(endpoint);
       toast.success('Invoice cancelled successfully');
       fetchInvoices();
     } catch (error) {
