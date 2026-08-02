@@ -18,7 +18,14 @@ class SupplierLedger(Base):
     
     debit: Mapped[float] = mapped_column(DECIMAL(12, 2), default=0)  # Amount we paid supplier (Payment)
     credit: Mapped[float] = mapped_column(DECIMAL(12, 2), default=0) # Amount we owe supplier (Purchase)
-    
     balance: Mapped[float] = mapped_column(DECIMAL(12, 2)) # Running balance after this transaction (Credit - Debit)
+    
+    gold_debit: Mapped[float] = mapped_column(DECIMAL(10, 3), default=0)
+    gold_credit: Mapped[float] = mapped_column(DECIMAL(10, 3), default=0)
+    gold_balance: Mapped[float] = mapped_column(DECIMAL(10, 3), default=0)
+    
+    silver_debit: Mapped[float] = mapped_column(DECIMAL(10, 3), default=0)
+    silver_credit: Mapped[float] = mapped_column(DECIMAL(10, 3), default=0)
+    silver_balance: Mapped[float] = mapped_column(DECIMAL(10, 3), default=0)
     
     seller: Mapped["Seller"] = relationship("Seller")

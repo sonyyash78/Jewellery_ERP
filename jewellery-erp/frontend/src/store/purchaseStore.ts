@@ -23,7 +23,7 @@ export interface PurchaseItem {
 
 interface PurchaseStoreState {
   items: PurchaseItem[];
-  gstState: 'same_state' | 'different_state';
+  gstState: 'same_state' | 'different_state' | 'none';
   
   goldForm: {
     itemName: string;
@@ -49,9 +49,12 @@ interface PurchaseStoreState {
     discount: number;
   };
 
+  editingItemId: string | null;
+  setEditingItemId: (id: string | null) => void;
+  
   updateGoldForm: (key: string, value: any) => void;
   updateSilverForm: (key: string, value: any) => void;
-  setGstState: (val: 'same_state' | 'different_state') => void;
+  setGstState: (val: 'same_state' | 'different_state' | 'none') => void;
   addItem: (item: PurchaseItem) => void;
   removeItem: (id: string) => void;
   resetForms: () => void;
@@ -72,11 +75,19 @@ export const usePurchaseStore = create<PurchaseStoreState>((set) => ({
     metalRate: 0, testingMeltingCharge: 0, otherCharges: 0, discount: 0
   },
 
+  editingItemId: null,
+  setEditingItemId: (id) => set({ editingItemId: id }),
+
   updateGoldForm: (key, value) => set((state) => ({ goldForm: { ...state.goldForm, [key]: value } })),
   updateSilverForm: (key, value) => set((state) => ({ silverForm: { ...state.silverForm, [key]: value } })),
   setGstState: (val) => set({ gstState: val }),
   
-  addItem: (item) => set((state) => ({ items: [...state.items, item] })),
+  addItem: (item) => set((state) => ({
+    items: state.editingItemId
+      ? state.items.map(i => i.id === state.editingItemId ? item : i)
+      : [...state.items, item],
+    editingItemId: null
+  })),
   removeItem: (id) => set((state) => ({ items: state.items.filter(i => i.id !== id) })),
   
   resetForms: () => set({
@@ -84,5 +95,5 @@ export const usePurchaseStore = create<PurchaseStoreState>((set) => ({
     silverForm: { itemName: '', grossWeight: 0, tanch: 0, wastage: 0, metalRate: 0, testingMeltingCharge: 0, otherCharges: 0, discount: 0 }
   }),
   
-  clearCart: () => set({ items: [] })
+  clearCart: () => set({ items: [], editingItemId: null })
 }));

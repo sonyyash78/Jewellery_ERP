@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getErrorMessage } from '../utils/errorUtils';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { axiosClient } from '../api/axiosClient';
@@ -32,7 +33,7 @@ export default function Login() {
       toast.success('Login successful!');
       navigate('/');
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'Login failed. Please check credentials.');
+      toast.error(getErrorMessage(error, 'Login failed. Please check credentials.'));
     } finally {
       setLoading(false);
     }

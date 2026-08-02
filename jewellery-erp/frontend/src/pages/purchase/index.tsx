@@ -2,16 +2,13 @@ import { useState } from 'react';
 import PurchaseGold from './PurchaseGold';
 import PurchaseSilver from './PurchaseSilver';
 import { usePurchaseStore } from '../../store/purchaseStore';
-import { Save, Printer, Trash2, FileText, User } from 'lucide-react';
-import { axiosClient } from '../../api/axiosClient';
+import { Save, Printer, Trash2, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
+import PurchaseCheckoutModal from './PurchaseCheckoutModal';
 
 export default function Purchase() {
   const { items, gstState, setGstState, removeItem, clearCart } = usePurchaseStore();
-  const [loading, setLoading] = useState(false);
-
-  // Seller Details State
-  const [seller, setSeller] = useState({ name: '', mobile: '', aadhaar_pan: '', address: '' });
+  const [showCheckout, setShowCheckout] = useState(false);
 
   const totalTaxable = items.reduce((sum, item) => sum + item.taxableAmount, 0);
   
@@ -19,93 +16,49 @@ export default function Purchase() {
   if (gstState === 'same_state') {
     cgst = totalTaxable * 0.015;
     sgst = totalTaxable * 0.015;
-  } else {
+  } else if (gstState === 'different_state') {
     igst = totalTaxable * 0.03;
   }
   
   const grandTotal = totalTaxable + cgst + sgst + igst;
 
-  const handleSavePurchase = async () => {
+  const handleSavePurchase = () => {
     if (items.length === 0) return toast.error("No items in purchase receipt");
-    if (!seller.name || !seller.mobile) return toast.error("Seller Name & Mobile are required");
+    setShowCheckout(true);
+  };
 
-    setLoading(true);
-    try {
-      const payload = {
-        seller: {
-          name: seller.name,
-          mobile: seller.mobile,
-          aadhaar_pan: seller.aadhaar_pan,
-          address: seller.address
-        },
-        total_taxable: totalTaxable,
-        cgst,
-        sgst,
-        igst,
-        grand_total: grandTotal,
-        status: 'Completed',
-        items: items.map(i => ({
-          metal_type: i.metalType,
-          item_name: i.itemName,
-          category: i.category,
-          gross_weight: i.grossWeight,
-          stone_weight: i.stoneWeight,
-          net_weight: i.netWeight,
-          touch_purity: i.touchPurity,
-          wastage: i.wastage,
-          fine_weight: i.fineWeight,
-          metal_rate: i.metalRate,
-          metal_value: i.metalValue,
-          labour_charge: i.labourCharge,
-          testing_melting_charge: i.testingMeltingCharge,
-          hallmark_charge: i.hallmarkCharge,
-          other_charges: i.otherCharges,
-          discount: i.discount,
-          taxable_amount: i.taxableAmount
-        }))
-      };
-
-      const res = await axiosClient.post('/purchases/', payload);
-      toast.success(`Purchase ${res.data.purchase_number} saved successfully!`);
-      clearCart();
-      setSeller({ name: '', mobile: '', aadhaar_pan: '', address: '' });
-    } catch (e: any) {
-      toast.error(e.response?.data?.detail || "Failed to save purchase");
-    } finally {
-      setLoading(false);
-    }
+  const getPayload = () => {
+    return {
+      total_taxable: totalTaxable,
+      cgst,
+      sgst,
+      igst,
+      grand_total: grandTotal,
+      items: items.map(i => ({
+        metal_type: i.metalType,
+        item_name: i.itemName,
+        category: i.category,
+        gross_weight: i.grossWeight,
+        stone_weight: i.stoneWeight,
+        net_weight: i.netWeight,
+        touch_purity: i.touchPurity,
+        wastage: i.wastage,
+        fine_weight: i.fineWeight,
+        metal_rate: i.metalRate,
+        metal_value: i.metalValue,
+        labour_charge: i.labourCharge,
+        testing_melting_charge: i.testingMeltingCharge,
+        hallmark_charge: i.hallmarkCharge,
+        other_charges: i.otherCharges,
+        discount: i.discount,
+        taxable_amount: i.taxableAmount
+      }))
+    };
   };
 
   return (
     <div className="h-[calc(100vh-6rem)] flex flex-col overflow-hidden">
-      
-      {/* Top Bar - Seller Details */}
-      <div className="mb-4 bg-surface border border-gray-800 rounded-xl p-3 shadow-lg flex flex-wrap gap-4 items-center">
-        <div className="flex items-center gap-2">
-            <User size={18} className="text-primary" />
-            <span className="text-sm font-bold text-textMain tracking-wide uppercase">Seller Info</span>
-        </div>
-        <input 
-          placeholder="Seller Name *" 
-          value={seller.name} onChange={e=>setSeller({...seller, name: e.target.value})}
-          className="bg-background border border-gray-700 rounded px-3 py-1.5 text-sm text-textMain focus:border-primary outline-none" 
-        />
-        <input 
-          placeholder="Mobile Number *" 
-          value={seller.mobile} onChange={e=>setSeller({...seller, mobile: e.target.value})}
-          className="bg-background border border-gray-700 rounded px-3 py-1.5 text-sm text-textMain focus:border-primary outline-none" 
-        />
-        <input 
-          placeholder="Aadhaar / PAN" 
-          value={seller.aadhaar_pan} onChange={e=>setSeller({...seller, aadhaar_pan: e.target.value})}
-          className="bg-background border border-gray-700 rounded px-3 py-1.5 text-sm text-textMain focus:border-primary outline-none" 
-        />
-        <input 
-          placeholder="Address (City)" 
-          value={seller.address} onChange={e=>setSeller({...seller, address: e.target.value})}
-          className="flex-1 bg-background border border-gray-700 rounded px-3 py-1.5 text-sm text-textMain focus:border-primary outline-none min-w-[200px]" 
-        />
-      </div>
+
 
       <div className="flex-1 flex gap-4 overflow-hidden">
         {/* Left Column: Calculators */}
@@ -127,10 +80,51 @@ export default function Purchase() {
             ) : (
               items.map((item) => (
                 <div key={item.id} className="bg-background border border-gray-800 rounded p-3 relative group">
-                  <button onClick={() => removeItem(item.id)} className="absolute top-2 right-2 text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Trash2 size={16} />
-                  </button>
-                  <div className="flex justify-between items-start mb-2">
+                  <div className="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button 
+                      onClick={() => {
+                        if (item.metalType === 'Gold') {
+                          usePurchaseStore.setState({
+                            goldForm: {
+                              itemName: item.itemName,
+                              category: item.category,
+                              grossWeight: item.grossWeight,
+                              stoneWeight: item.stoneWeight,
+                              touchPurity: item.touchPurity,
+                              metalRate: item.metalRate,
+                              labourCharge: item.labourCharge,
+                              hallmarkCharge: item.hallmarkCharge,
+                              otherCharges: item.otherCharges,
+                              discount: item.discount
+                            }
+                          });
+                        } else {
+                          usePurchaseStore.setState({
+                            silverForm: {
+                              itemName: item.itemName,
+                              grossWeight: item.grossWeight,
+                              tanch: item.touchPurity,
+                              wastage: item.wastage,
+                              metalRate: item.metalRate,
+                              testingMeltingCharge: item.testingMeltingCharge,
+                              otherCharges: item.otherCharges,
+                              discount: item.discount
+                            }
+                          });
+                        }
+                        usePurchaseStore.getState().setEditingItemId(item.id);
+                        import('react-hot-toast').then(mod => mod.default.success("Item loaded into calculator for editing"));
+                      }} 
+                      className="text-gray-600 hover:text-blue-400 transition-colors"
+                      title="Edit Item"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+                    </button>
+                    <button onClick={() => removeItem(item.id)} className="text-gray-600 hover:text-red-400 transition-colors" title="Delete Item">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                  <div className="flex justify-between items-start mb-2 pr-12">
                     <div>
                       <span className={`text-xs font-bold px-1.5 py-0.5 rounded mr-2 ${item.metalType === 'Gold' ? 'bg-primary/20 text-primary' : 'bg-gray-700 text-gray-300'}`}>{item.metalType}</span>
                       <span className="text-sm text-textMain font-medium">{item.itemName}</span>
@@ -152,8 +146,9 @@ export default function Purchase() {
             <div className="flex justify-between items-center mb-3">
               <span className="text-sm text-textMuted">GST Type</span>
               <div className="flex gap-2">
-                <button onClick={() => setGstState('same_state')} className={`px-3 py-1 rounded text-xs font-bold transition-colors ${gstState === 'same_state' ? 'bg-primary text-black' : 'bg-gray-800 text-gray-400'}`}>Same State (3%)</button>
-                <button onClick={() => setGstState('different_state')} className={`px-3 py-1 rounded text-xs font-bold transition-colors ${gstState === 'different_state' ? 'bg-primary text-black' : 'bg-gray-800 text-gray-400'}`}>Diff State (IGST)</button>
+                <button onClick={() => setGstState('same_state')} className={`px-2 py-1 rounded text-xs font-bold transition-colors ${gstState === 'same_state' ? 'bg-primary text-black' : 'bg-gray-800 text-gray-400'}`}>Same State (3%)</button>
+                <button onClick={() => setGstState('different_state')} className={`px-2 py-1 rounded text-xs font-bold transition-colors ${gstState === 'different_state' ? 'bg-primary text-black' : 'bg-gray-800 text-gray-400'}`}>Diff State (IGST)</button>
+                <button onClick={() => setGstState('none')} className={`px-2 py-1 rounded text-xs font-bold transition-colors ${gstState === 'none' ? 'bg-primary text-black' : 'bg-gray-800 text-gray-400'}`}>Without GST</button>
               </div>
             </div>
 
@@ -164,8 +159,10 @@ export default function Purchase() {
                   <div className="flex justify-between text-sm text-textMuted"><span>CGST (1.5%)</span><span className="font-mono">₹{cgst.toFixed(2)}</span></div>
                   <div className="flex justify-between text-sm text-textMuted"><span>SGST (1.5%)</span><span className="font-mono">₹{sgst.toFixed(2)}</span></div>
                 </>
-              ) : (
+              ) : gstState === 'different_state' ? (
                 <div className="flex justify-between text-sm text-textMuted"><span>IGST (3.0%)</span><span className="font-mono">₹{igst.toFixed(2)}</span></div>
+              ) : (
+                <div className="flex justify-between text-sm text-textMuted"><span>GST (0%)</span><span className="font-mono">₹0.00</span></div>
               )}
               <div className="flex justify-between text-xl font-bold text-primary pt-2 border-t border-gray-800 mt-2">
                 <span>GRAND TOTAL</span><span className="font-mono">₹{grandTotal.toFixed(2)}</span>
@@ -174,7 +171,7 @@ export default function Purchase() {
 
             <div className="grid grid-cols-2 gap-3">
               <button 
-                disabled={loading || items.length === 0}
+                disabled={items.length === 0}
                 onClick={handleSavePurchase}
                 className="bg-primary hover:bg-primary-dark text-black font-bold py-3 rounded flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
               >
@@ -187,6 +184,18 @@ export default function Purchase() {
           </div>
         </div>
       </div>
+      
+      {showCheckout && (
+        <PurchaseCheckoutModal 
+          payload={getPayload()}
+          grandTotal={grandTotal}
+          onClose={() => setShowCheckout(false)}
+          onSuccess={() => {
+            setShowCheckout(false);
+            clearCart();
+          }}
+        />
+      )}
     </div>
   );
 }

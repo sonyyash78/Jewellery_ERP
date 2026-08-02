@@ -18,7 +18,14 @@ class CustomerLedger(Base):
     
     debit: Mapped[float] = mapped_column(DECIMAL(12, 2), default=0)  # Amount customer owes us (Invoice)
     credit: Mapped[float] = mapped_column(DECIMAL(12, 2), default=0) # Amount customer paid us (Payment)
-    
     balance: Mapped[float] = mapped_column(DECIMAL(12, 2)) # Running balance after this transaction
+    
+    gold_debit: Mapped[float] = mapped_column(DECIMAL(10, 3), default=0)
+    gold_credit: Mapped[float] = mapped_column(DECIMAL(10, 3), default=0)
+    gold_balance: Mapped[float] = mapped_column(DECIMAL(10, 3), default=0)
+    
+    silver_debit: Mapped[float] = mapped_column(DECIMAL(10, 3), default=0)
+    silver_credit: Mapped[float] = mapped_column(DECIMAL(10, 3), default=0)
+    silver_balance: Mapped[float] = mapped_column(DECIMAL(10, 3), default=0)
     
     customer: Mapped["Customer"] = relationship("Customer")

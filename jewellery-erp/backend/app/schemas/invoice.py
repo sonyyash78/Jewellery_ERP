@@ -41,6 +41,7 @@ class InvoiceCreate(BaseModel):
     tax_amount: float
     discount_amount: float = 0.0
     grand_total: float
+    amount_paid: Optional[float] = None
     status: InvoiceStatus = InvoiceStatus.DRAFT
     items: List[InvoiceItemCreate]
 

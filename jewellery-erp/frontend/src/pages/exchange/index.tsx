@@ -4,18 +4,23 @@ import NewItemScanner from './NewItemScanner';
 import { useExchangeStore } from '../../store/exchangeStore';
 import { axiosClient } from '../../api/axiosClient';
 import toast from 'react-hot-toast';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Edit2 } from 'lucide-react';
+import ExchangeCheckoutModal from './ExchangeCheckoutModal';
 
 export default function ExchangeModule() {
-  const { oldItems, newItems, removeOldItem, removeNewItem, customerId, setCustomerId, clearExchange } = useExchangeStore();
+  const { oldItems, newItems, gstState, setGstState, removeOldItem, removeNewItem, customerId, setCustomerId, clearExchange, setEditingOldItem } = useExchangeStore();
   
   const [customers, setCustomers] = useState<any[]>([]);
+  const [showCheckout, setShowCheckout] = useState(false);
   
   const totalOldValue = oldItems.reduce((acc, i) => acc + i.calculatedValue, 0);
   const totalNewValue = newItems.reduce((acc, i) => acc + i.finalPrice, 0);
   
   // Tax calculation on New Value
-  const gstAmount = totalNewValue * 0.03; // 3% GST standard on jewellery
+  let gstAmount = 0;
+  if (gstState !== 'none') {
+    gstAmount = totalNewValue * 0.03; // 3% GST standard on jewellery
+  }
   const grandTotal = totalNewValue + gstAmount;
   
   // Difference = What customer pays - what we owe them
@@ -25,35 +30,29 @@ export default function ExchangeModule() {
     axiosClient.get('/customers/').then(res => setCustomers(res.data.items)).catch();
   }, []);
 
-  const handleProcessExchange = async () => {
-    if (!customerId) return toast.error("Select a customer");
+  const handleProcessExchange = () => {
+    // if (!customerId) return toast.error("Select a customer"); // We'll let the modal handle it or require it there
     if (oldItems.length === 0 && newItems.length === 0) return toast.error("No items in exchange");
-    
-    try {
-      const payload = {
-        customer_id: customerId,
-        total_old_value: totalOldValue,
-        total_new_value: totalNewValue,
-        gst_amount: gstAmount,
-        grand_total: grandTotal,
-        difference_amount: differenceAmount,
-        old_items: oldItems.map(i => ({
-          item_name: i.itemName, metal: i.metal, purity: i.purity, touch: i.touch,
-          gross_weight: i.grossWeight, stone_weight: i.stoneWeight, net_weight: i.netWeight,
-          rate_applied: i.rateApplied, calculated_value: i.calculatedValue
-        })),
-        new_items: newItems.map(i => ({
-          stock_item_id: i.stockItemId, item_name: i.itemName, metal: i.metal,
-          net_weight: i.netWeight, final_price: i.finalPrice
-        }))
-      };
+    setShowCheckout(true);
+  };
 
-      await axiosClient.post('/exchanges/', payload);
-      toast.success("Exchange Processed Successfully");
-      clearExchange();
-    } catch (e: any) {
-      toast.error(e.response?.data?.detail || "Failed to process exchange");
-    }
+  const getPayload = () => {
+    return {
+      total_old_value: totalOldValue,
+      total_new_value: totalNewValue,
+      gst_amount: gstAmount,
+      grand_total: grandTotal,
+      difference_amount: differenceAmount,
+      old_items: oldItems.map(i => ({
+        item_name: i.itemName, metal: i.metal, purity: i.purity, touch: i.touch,
+        gross_weight: i.grossWeight, stone_weight: i.stoneWeight, net_weight: i.netWeight,
+        rate_applied: i.rateApplied, calculated_value: i.calculatedValue
+      })),
+      new_items: newItems.map(i => ({
+        stock_item_id: i.stockItemId, item_name: i.itemName, metal: i.metal,
+        net_weight: i.netWeight, final_price: i.finalPrice
+      }))
+    };
   };
 
   return (
@@ -104,7 +103,8 @@ export default function ExchangeModule() {
                       <td className="py-2 px-3">{item.touch}%</td>
                       <td className="py-2 px-3">₹ {item.rateApplied}</td>
                       <td className="py-2 px-3 text-right font-mono text-green-400">{item.calculatedValue.toLocaleString(undefined, {maximumFractionDigits:2})}</td>
-                      <td className="py-2 px-3 text-right">
+                      <td className="py-2 px-3 text-right flex justify-end gap-2">
+                        <button onClick={() => setEditingOldItem(item)} className="text-gray-400 hover:text-blue-400"><Edit2 size={14}/></button>
                         <button onClick={() => removeOldItem(item.id)} className="text-red-400 hover:text-red-300"><Trash2 size={14}/></button>
                       </td>
                     </tr>
@@ -173,8 +173,17 @@ export default function ExchangeModule() {
               <span className="text-gray-400 font-bold uppercase">Total New Value</span>
               <span className="font-mono text-red-400">₹ {totalNewValue.toLocaleString(undefined, {maximumFractionDigits:2})}</span>
             </div>
+            <div className="flex flex-col gap-2 pt-2 border-t border-gray-800 mb-2">
+              <span className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">GST Type</span>
+              <div className="flex gap-2">
+                <button onClick={() => setGstState('same_state')} className={`flex-1 py-1 rounded text-xs font-bold transition-colors ${gstState === 'same_state' ? 'bg-primary text-black' : 'bg-gray-800 text-gray-400'}`}>Same State</button>
+                <button onClick={() => setGstState('different_state')} className={`flex-1 py-1 rounded text-xs font-bold transition-colors ${gstState === 'different_state' ? 'bg-primary text-black' : 'bg-gray-800 text-gray-400'}`}>Interstate</button>
+                <button onClick={() => setGstState('none')} className={`flex-1 py-1 rounded text-xs font-bold transition-colors ${gstState === 'none' ? 'bg-primary text-black' : 'bg-gray-800 text-gray-400'}`}>No GST</button>
+              </div>
+            </div>
+            
             <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-400 font-bold uppercase">GST (3%)</span>
+              <span className="text-gray-400 font-bold uppercase">GST ({gstState === 'none' ? '0%' : '3%'})</span>
               <span className="font-mono text-red-400">₹ {gstAmount.toLocaleString(undefined, {maximumFractionDigits:2})}</span>
             </div>
             <div className="flex justify-between items-center pt-2 border-t border-gray-800">
@@ -207,6 +216,18 @@ export default function ExchangeModule() {
         </div>
 
       </div>
+      
+      {showCheckout && (
+        <ExchangeCheckoutModal 
+          payload={getPayload()}
+          differenceAmount={differenceAmount}
+          onClose={() => setShowCheckout(false)}
+          onSuccess={() => {
+            setShowCheckout(false);
+            clearExchange();
+          }}
+        />
+      )}
     </div>
   );
 }

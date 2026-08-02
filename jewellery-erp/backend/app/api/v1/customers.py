@@ -11,6 +11,9 @@ from app.repositories.crm_repo import customer_repo
 from app.schemas.crm import CustomerCreate, CustomerUpdate, CustomerResponse, CustomerListResponse
 from app.models.crm import Customer
 from app.models.customer_ledger import CustomerLedger
+from app.models.invoice import Invoice, InvoiceStatus
+from app.models.exchange import Exchange
+from app.models.metal_rates import MetalRate
 
 router = APIRouter(dependencies=[Depends(get_current_user)])
 
@@ -119,10 +122,15 @@ def add_customer_ledger_entry(
         
     debit = float(entry.get('debit') or 0) # Customer owes us (e.g. Bill)
     credit = float(entry.get('credit') or 0) # Customer paid us (e.g. Cash received)
+    gold_debit = float(entry.get('gold_debit') or 0)
+    gold_credit = float(entry.get('gold_credit') or 0)
+    silver_debit = float(entry.get('silver_debit') or 0)
+    silver_credit = float(entry.get('silver_credit') or 0)
     
     # Update balance: Outstanding = Old Outstanding + Debit (Bill) - Credit (Payment)
-    # Wait, if they owe us, outstanding increases. If they pay us, outstanding decreases.
     customer.outstanding_balance = float(customer.outstanding_balance or 0) + debit - credit
+    customer.fine_gold_balance = float(customer.fine_gold_balance or 0) + gold_debit - gold_credit
+    customer.fine_silver_balance = float(customer.fine_silver_balance or 0) + silver_debit - silver_credit
     
     ledger = CustomerLedger(
         customer_id=id,
@@ -131,12 +139,54 @@ def add_customer_ledger_entry(
         description=entry.get('description'),
         debit=debit,
         credit=credit,
-        balance=customer.outstanding_balance
+        balance=customer.outstanding_balance,
+        gold_debit=gold_debit,
+        gold_credit=gold_credit,
+        gold_balance=customer.fine_gold_balance,
+        silver_debit=silver_debit,
+        silver_credit=silver_credit,
+        silver_balance=customer.fine_silver_balance
     )
     
     db.add(ledger)
     db.commit()
     db.refresh(ledger)
-    db.refresh(customer)
+    return {"ledger": ledger, "new_balance": customer.outstanding_balance, "gold_balance": customer.fine_gold_balance, "silver_balance": customer.fine_silver_balance}
+
+@router.get("/{id}/bills")
+def get_customer_bills(id: int, db: Session = Depends(get_db)):
+    ledger_entries = db.query(CustomerLedger).filter(CustomerLedger.customer_id == id).order_by(CustomerLedger.date.desc(), CustomerLedger.id.desc()).all()
     
-    return {"ledger": ledger, "new_balance": customer.outstanding_balance}
+    formatted_bills = []
+    for entry in ledger_entries:
+        formatted_bills.append({
+            "id": entry.id,
+            "date": entry.date,
+            "type": entry.voucher_type,
+            "bill_no": entry.voucher_number or '-',
+            "summary": entry.description or '-',
+            "gold_change": float(entry.gold_debit - entry.gold_credit),
+            "silver_change": float(entry.silver_debit - entry.silver_credit),
+            "debit": float(entry.debit),
+            "credit": float(entry.credit),
+            "balance": float(entry.balance)
+        })
+    
+    # Customer balances
+    customer = db.query(Customer).filter(Customer.id == id).first()
+    
+    # Get current metal rates
+    latest_gold_rate = db.query(MetalRate).filter(MetalRate.metal_type == 'Gold').order_by(MetalRate.date.desc()).first()
+    latest_silver_rate = db.query(MetalRate).filter(MetalRate.metal_type == 'Silver').order_by(MetalRate.date.desc()).first()
+    
+    current_gold_rate = latest_gold_rate.rate if latest_gold_rate else 7000
+    current_silver_rate = latest_silver_rate.rate if latest_silver_rate else 85
+    
+    return {
+        "bills": formatted_bills,
+        "current_gold_rate": float(current_gold_rate),
+        "current_silver_rate": float(current_silver_rate),
+        "outstanding_balance": float(customer.outstanding_balance or 0),
+        "fine_gold_balance": float(customer.fine_gold_balance or 0),
+        "fine_silver_balance": float(customer.fine_silver_balance or 0)
+    }

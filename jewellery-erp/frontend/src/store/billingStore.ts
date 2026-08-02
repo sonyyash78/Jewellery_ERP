@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 export type MakingChargeType = 'percent' | 'per_gm' | 'flat';
-export type GSTState = 'same_state' | 'different_state';
+export type GSTState = 'same_state' | 'different_state' | 'none';
 export type ItemType = 'Gold' | 'Silver';
 
 export interface BaseCalcForm {
@@ -70,13 +70,18 @@ interface BillingStoreState {
   gstState: GSTState;
   recentScans: string[];
   selectedCustomerId: number | null;
+  globalDiscount: number;
   
   liveRates: LiveRates;
   
   goldForm: GoldForm;
   silverForm: SilverForm;
   
+  editingItemId: string | null;
+  setEditingItemId: (id: string | null) => void;
+  
   setSelectedCustomerId: (id: number | null) => void;
+  setGlobalDiscount: (amount: number) => void;
   setGstState: (val: GSTState) => void;
   updateLiveRates: (rates: Partial<LiveRates>) => void;
   updateGoldForm: (field: keyof GoldForm, value: any) => void;
@@ -108,6 +113,7 @@ export const useBillingStore = create<BillingStoreState>((set) => ({
   gstState: 'same_state',
   recentScans: [],
   selectedCustomerId: null,
+  globalDiscount: 0,
   
   liveRates: {
     gold24k: 7910.0,
@@ -121,7 +127,11 @@ export const useBillingStore = create<BillingStoreState>((set) => ({
   goldForm: initialGoldForm,
   silverForm: initialSilverForm,
   
+  editingItemId: null,
+  setEditingItemId: (id) => set({ editingItemId: id }),
+  
   setSelectedCustomerId: (id) => set({ selectedCustomerId: id }),
+  setGlobalDiscount: (amount) => set({ globalDiscount: amount }),
   setGstState: (val) => set({ gstState: val }),
   updateLiveRates: (rates) => set((state) => ({ liveRates: { ...state.liveRates, ...rates } })),
   updateGoldForm: (field, value) => set((state) => ({ goldForm: { ...state.goldForm, [field]: value } })),
@@ -130,9 +140,14 @@ export const useBillingStore = create<BillingStoreState>((set) => ({
   resetGoldForm: () => set({ goldForm: initialGoldForm }),
   resetSilverForm: () => set({ silverForm: initialSilverForm }),
   
-  addToCart: (item) => set((state) => ({ cart: [...state.cart, item] })),
+  addToCart: (item) => set((state) => ({ 
+    cart: state.editingItemId 
+      ? state.cart.map(i => i.id === state.editingItemId ? item : i) 
+      : [...state.cart, item],
+    editingItemId: null
+  })),
   removeFromCart: (id) => set((state) => ({ cart: state.cart.filter(i => i.id !== id) })),
-  clearCart: () => set({ cart: [], recentScans: [] }),
+  clearCart: () => set({ cart: [], recentScans: [], globalDiscount: 0, editingItemId: null }),
   addRecentScan: (code) => set((state) => ({ recentScans: [code, ...state.recentScans] }))
 }));
 

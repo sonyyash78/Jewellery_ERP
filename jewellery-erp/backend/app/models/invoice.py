@@ -7,7 +7,9 @@ import enum
 
 class InvoiceStatus(str, enum.Enum):
     DRAFT = "Draft"
+    PARTIAL = "Partial"
     PAID = "Paid"
+    COMPLETED = "Completed"
     CANCELLED = "Cancelled"
 
 class Invoice(Base):
@@ -21,7 +23,7 @@ class Invoice(Base):
     tax_amount: Mapped[float] = mapped_column(DECIMAL(12, 2), default=0.0)
     discount_amount: Mapped[float] = mapped_column(DECIMAL(12, 2), default=0.0)
     grand_total: Mapped[float] = mapped_column(DECIMAL(12, 2), default=0.0)
-    status: Mapped[InvoiceStatus] = mapped_column(Enum(InvoiceStatus), default=InvoiceStatus.DRAFT, index=True)
+    status: Mapped[InvoiceStatus] = mapped_column(Enum(InvoiceStatus, values_callable=lambda obj: [e.value for e in obj]), default=InvoiceStatus.DRAFT, index=True)
     created_by: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="RESTRICT"))
 
     customer: Mapped["Customer"] = relationship("Customer", back_populates="invoices", foreign_keys=[customer_id])

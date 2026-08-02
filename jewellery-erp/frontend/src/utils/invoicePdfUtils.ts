@@ -12,6 +12,8 @@ interface InvoicePDFData {
     tax_amount: number;
     discount_amount: number;
     grand_total: number;
+    amount_paid?: number;
+    balance_due?: number;
   };
   customer: {
     name: string;
@@ -144,24 +146,24 @@ export const generateInvoicePDF = async (data: InvoicePDFData) => {
         let itemDesc = `${index + 1}. ${item.item_name}`;
         itemDesc += `\nGross: ${item.gross_weight?.toFixed(3) || '0.000'}g`;
         return [
+          (index + 1).toString(),
           itemDesc,
           item.metal_type || '-',
-          `${item.net_weight?.toFixed(3) || '0.000'}g`,
-          `${item.tanch_percentage?.toFixed(2) || '0.00'}%`,
+          `${item.net_weight?.toFixed(3) || '0.000'}`,
+          `${item.tanch_percentage?.toFixed(2) || '0.00'}`,
           `Rs. ${item.applied_rate?.toFixed(1) || '0.0'}`,
           `Rs. ${item.final_price.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
         ];
       });
 
       autoTable(doc, {
-        head: [['Item Description', 'Metal', 'Net Wt', 'Tanch', 'Rate', 'Total']],
+        head: [['#', 'Item Description', 'Metal', 'Net Weight (g)', 'Tanch (%)', 'Rate', 'Amount (Rs.)']],
         body: oldTableData,
         startY: yPos,
-        styles: { fontSize: 9, cellPadding: 4, textColor: [40, 40, 40] },
-        headStyles: { fillColor: [20, 20, 24], textColor: [255, 255, 255], fontStyle: 'bold' },
-        columnStyles: { 0: { cellWidth: 55 }, 5: { halign: 'right', fontStyle: 'bold' } },
-        alternateRowStyles: { fillColor: [255, 255, 255] },
-        bodyStyles: { lineColor: [220, 220, 220], lineWidth: { bottom: 0.2 } }
+        styles: { fontSize: 9, cellPadding: 4, textColor: [0, 0, 0], lineColor: [221, 221, 221], lineWidth: 0.1 },
+        headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontStyle: 'bold' },
+        columnStyles: { 0: { cellWidth: 10 }, 1: { cellWidth: 45 }, 6: { halign: 'left' } },
+        alternateRowStyles: { fillColor: [255, 255, 255] }
       });
       yPos = (doc as any).lastAutoTable.finalY + 10;
       
@@ -207,8 +209,10 @@ export const generateInvoicePDF = async (data: InvoicePDFData) => {
       const other = item.other_charges || 0;
       
       return [
+        (index + 1).toString(),
         itemDesc,
-        `${netWt.toFixed(3)}g`,
+        item.metal_type || '-',
+        `${netWt.toFixed(3)}`,
         `Rs. ${rate.toFixed(1)}`,
         makingStr,
         `Rs. ${hallmark.toFixed(1)}`,
@@ -217,15 +221,17 @@ export const generateInvoicePDF = async (data: InvoicePDFData) => {
       ];
     });
 
-    const newItemsHead = [['Item / Purity', 'Net Wt', 'Rate', 'Making', 'Hallmark', 'Other Chg', 'Total']];
+    const newItemsHead = [['#', 'Item Description', 'Metal', 'Net Weight (g)', 'Rate', 'Making (Rs.)', 'Hallmark', 'Other Chg', 'Amount (Rs.)']];
     const newItemsColStyles = {
-        0: { halign: 'left', cellWidth: 55 },
-        1: { halign: 'right' },
-        2: { halign: 'right' },
-        3: { halign: 'right' },
-        4: { halign: 'right' },
-        5: { halign: 'right' },
-        6: { halign: 'right', fontStyle: 'bold' }
+        0: { halign: 'left', cellWidth: 10 },
+        1: { halign: 'left', cellWidth: 40 },
+        2: { halign: 'left' },
+        3: { halign: 'left' },
+        4: { halign: 'left' },
+        5: { halign: 'left' },
+        6: { halign: 'left' },
+        7: { halign: 'left' },
+        8: { halign: 'left' }
     };
 
     autoTable(doc, {
@@ -235,21 +241,19 @@ export const generateInvoicePDF = async (data: InvoicePDFData) => {
       styles: {
         fontSize: 9,
         cellPadding: 4,
-        textColor: [40, 40, 40],
+        textColor: [0, 0, 0],
+        lineColor: [221, 221, 221], 
+        lineWidth: 0.1
       },
       headStyles: {
-        fillColor: [20, 20, 24], // Dark background for header
-        textColor: [255, 255, 255],
+        fillColor: [245, 245, 245], // light gray like HTML #f5f5f5
+        textColor: [0, 0, 0],
         fontStyle: 'bold',
         halign: 'left'
       },
       columnStyles: newItemsColStyles as any,
       alternateRowStyles: {
         fillColor: [255, 255, 255]
-      },
-      bodyStyles: {
-        lineColor: [220, 220, 220],
-        lineWidth: { bottom: 0.2 }
       }
     });
 
@@ -258,73 +262,14 @@ export const generateInvoicePDF = async (data: InvoicePDFData) => {
     // Breakdown block on the right
     const summaryX = pageWidth / 2 + 10;
     
-    let hasGold = false;
-    let hasSilver = false;
-    
-    let goldGross = 0;
-    let goldStone = 0;
-    let goldNet = 0;
-    let goldBasePrice = 0;
-    let goldMaking = 0;
-    
-    let silverGross = 0;
-    let silverNet = 0;
-    let silverBasePrice = 0;
-    let silverMaking = 0;
-    
-    let totalHallmark = 0;
-    let totalOther = 0;
-
-    data.items.forEach(item => {
-      if (item.metal_type === 'GOLD') {
-        hasGold = true;
-        goldGross += (item.gross_weight || 0);
-        goldStone += (item.stone_weight || 0);
-        goldNet += (item.net_weight || 0);
-        goldBasePrice += (item.metal_value || 0);
-        goldMaking += (item.making_charges || 0);
-      } else if (item.metal_type === 'SILVER') {
-        hasSilver = true;
-        silverGross += (item.gross_weight || 0);
-        silverNet += (item.net_weight || item.pure_weight || 0);
-        silverBasePrice += (item.metal_value || 0);
-        silverMaking += (item.making_charges || 0);
-      }
-      totalHallmark += (item.hallmark_charges || 0);
-      totalOther += (item.other_charges || 0);
-    });
-
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(40, 40, 40);
+    doc.setTextColor(0, 0, 0);
     
     const textRight = (text: string, value: string, y: number) => {
       doc.text(text, summaryX, y);
       doc.text(value, pageWidth - leftMargin, y, { align: 'right' });
     };
-
-    if (hasGold) {
-      textRight('Gold Gross | Stone | Net:', `${goldGross.toFixed(3)}g | ${goldStone.toFixed(3)}g | ${goldNet.toFixed(3)}g`, yPos);
-      yPos += 6;
-      textRight('Gold Base Price:', `Rs. ${goldBasePrice.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, yPos);
-      yPos += 6;
-      textRight('Gold Making Charge:', `Rs. ${goldMaking.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, yPos);
-      yPos += 6;
-    }
-    
-    if (hasSilver) {
-      textRight('Silver Gross | Net:', `${silverGross.toFixed(3)}g | ${silverNet.toFixed(3)}g`, yPos);
-      yPos += 6;
-      textRight('Silver Base Price:', `Rs. ${silverBasePrice.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, yPos);
-      yPos += 6;
-      textRight('Silver Making Charge:', `Rs. ${silverMaking.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, yPos);
-      yPos += 6;
-    }
-    
-    textRight('Total Hallmarking:', `Rs. ${totalHallmark.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, yPos);
-    yPos += 6;
-    textRight('Total Other Charges:', `Rs. ${totalOther.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, yPos);
-    yPos += 10;
 
     // Separator line
     doc.setDrawColor(200, 200, 200);
@@ -348,28 +293,23 @@ export const generateInvoicePDF = async (data: InvoicePDFData) => {
     doc.setTextColor(212, 175, 55); // Gold
     doc.text('GRAND TOTAL:', summaryX, yPos);
     doc.text(`Rs. ${data.totals.grand_total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, pageWidth - leftMargin, yPos, { align: 'right' });
-    
-    const finalYPos = Math.max(yPos + 20, (doc as any).lastAutoTable.finalY + 40);
-    yPos = finalYPos;
+    yPos += 8;
 
-    // QR Code
-    try {
-      const upiId = 'saideep@upi'; // Placeholder UPI ID
-      const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent('SAIDEEP JEWELLERS')}&am=${data.totals.grand_total.toFixed(2)}&cu=INR`;
+    if (data.invoice.amount_paid !== undefined) {
+      doc.setFontSize(11);
+      doc.setTextColor(46, 125, 50); // Green
+      doc.text('Amount Paid:', summaryX, yPos);
+      doc.text(`Rs. ${data.invoice.amount_paid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, pageWidth - leftMargin, yPos, { align: 'right' });
+      yPos += 6;
       
-      const qrDataUrl = await QRCode.toDataURL(upiLink, {
-        width: 100,
-        margin: 1,
-        color: {
-          dark: '#000000',
-          light: '#ffffff'
-        }
-      });
-      
-      doc.addImage(qrDataUrl, 'PNG', leftMargin, yPos - 15, 30, 30);
-    } catch (qrErr) {
-      console.warn("Failed to generate QR code", qrErr);
+      doc.setTextColor(211, 47, 47); // Red
+      doc.text('Balance Due:', summaryX, yPos);
+      doc.text(`Rs. ${data.invoice.balance_due!.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, pageWidth - leftMargin, yPos, { align: 'right' });
+      yPos += 8;
     }
+    
+    const finalYPos = Math.max(yPos + 12, (doc as any).lastAutoTable.finalY + 40);
+    yPos = finalYPos;
 
     // Footer
     doc.setFontSize(10);
@@ -389,5 +329,95 @@ export const generateInvoicePDF = async (data: InvoicePDFData) => {
   } catch (error) {
     console.error('PDF Generation Error:', error);
     throw new Error(`Failed to generate PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
+
+export const generatePaymentReceiptPDF = (row: any, profile: any, isCustomer: boolean) => {
+  try {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
+    let yPos = 20;
+    const leftMargin = 14;
+
+    // Header: SAIDEEP JEWELLERS
+    doc.setFontSize(24);
+    doc.setTextColor(212, 175, 55); // Gold color
+    doc.setFont('helvetica', 'bold');
+    doc.text('SAIDEEP JEWELLERS', leftMargin, yPos);
+    yPos += 8;
+
+    // Line separator
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.5);
+    doc.line(leftMargin, yPos, pageWidth - leftMargin, yPos);
+    yPos += 8;
+
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 0, 0);
+    doc.text('PAYMENT RECEIPT', leftMargin, yPos);
+    
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    const formattedDate = new Date(row.date).toLocaleDateString('en-GB');
+    doc.text(`Date: ${formattedDate}`, pageWidth - leftMargin, yPos, { align: 'right' });
+    yPos += 12;
+
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text(isCustomer ? 'Received From:' : 'Paid To:', leftMargin, yPos);
+    
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    yPos += 6;
+    const name = isCustomer ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() : profile.name;
+    doc.text(name || 'Unknown', leftMargin, yPos);
+    
+    if (profile.phone_number || profile.mobile) {
+      yPos += 5;
+      doc.text(profile.phone_number || profile.mobile, leftMargin, yPos);
+    }
+    yPos += 15;
+
+    // Amount Details
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    
+    const amount = Number(row.credit) > 0 ? Number(row.credit) : Number(row.debit);
+    const amountStr = `Rs. ${amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    
+    doc.text(`Payment Amount:`, leftMargin, yPos);
+    doc.text(amountStr, leftMargin + 40, yPos);
+    yPos += 10;
+    
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Payment Details:`, leftMargin, yPos);
+    
+    // Check if summary is long and wrap it
+    const summaryStr = row.summary || 'Manual Payment / Settlement';
+    const splitSummary = doc.splitTextToSize(summaryStr, pageWidth - leftMargin - 40 - 14);
+    doc.text(splitSummary, leftMargin + 40, yPos);
+    
+    yPos += 10 + (splitSummary.length * 5);
+    
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Balance Remaining:`, leftMargin, yPos);
+    
+    const balanceStr = `Rs. ${Math.abs(Number(row.balance)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    doc.text(balanceStr, leftMargin + 40, yPos);
+    
+    yPos += 20;
+
+    // Footer
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(100, 100, 100);
+    doc.text('This is a computer generated receipt.', leftMargin, yPos);
+
+    doc.save(`Payment_Receipt_${formattedDate.replace(/\//g, '')}.pdf`);
+  } catch (error) {
+    console.error('PDF Generation Error:', error);
   }
 };

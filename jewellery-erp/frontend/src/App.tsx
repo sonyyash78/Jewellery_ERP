@@ -14,6 +14,7 @@ import ExchangeModule from './pages/exchange';
 import ReportsModule from './pages/reports';
 import SettingsModule from './pages/settings';
 
+// removed unused RequireAuth
 function App() {
   return (
     <>

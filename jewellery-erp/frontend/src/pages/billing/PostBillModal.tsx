@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { axiosClient } from '../../api/axiosClient';
 import toast from 'react-hot-toast';
 import { UserPlus, User, Check, X } from 'lucide-react';
+import { getErrorMessage } from '../../utils/errorUtils';
 
 interface PostBillModalProps {
   invoiceId: number;
@@ -33,7 +34,7 @@ export default function PostBillModal({ invoiceId, onClose }: PostBillModalProps
       toast.success('Customer linked to invoice successfully!');
       onClose();
     } catch (e: any) {
-      toast.error(e.response?.data?.detail || 'Failed to link customer');
+      toast.error(getErrorMessage(e, 'Failed to link customer'));
     } finally {
       setLoading(false);
     }
@@ -55,9 +56,8 @@ export default function PostBillModal({ invoiceId, onClose }: PostBillModalProps
       });
       await handleLinkCustomer(res.data.id);
     } catch (e: any) {
-      const detail = e.response?.data?.detail;
-      const errorMsg = Array.isArray(detail) ? detail.map((d: any) => d.msg).join(", ") : (detail || 'Failed to create customer');
-      toast.error(errorMsg);
+      toast.error(getErrorMessage(e, 'Failed to create customer'));
+    } finally {
       setLoading(false);
     }
   };

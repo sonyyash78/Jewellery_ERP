@@ -1,9 +1,10 @@
 import { useBillingStore } from '../../store/billingStore';
 import type { BillItem } from '../../store/billingStore';
 import toast from 'react-hot-toast';
+import { ShoppingCart } from 'lucide-react';
 
 export default function SilverCalculator() {
-  const { silverForm: form, updateSilverForm: update, resetSilverForm: reset, addToCart, liveRates } = useBillingStore();
+  const { silverForm: form, updateSilverForm: update, resetSilverForm: reset, addToCart, liveRates, editingItemId } = useBillingStore();
 
   const recoveredSilver = form.grossWeight * (form.tanch / 100);
   const metalValue = recoveredSilver * form.ratePerKg;
@@ -21,7 +22,7 @@ export default function SilverCalculator() {
       return;
     }
     const item: BillItem = {
-      id: Math.random().toString(36).substring(7),
+      id: editingItemId || Math.random().toString(36).substring(7),
       itemType: 'Silver',
       itemName: form.itemName || 'Silver Item',
       purityDisplay: form.silverPurity,
@@ -177,8 +178,8 @@ export default function SilverCalculator() {
       </div>
 
       <div className="mt-2 pt-2 border-t border-gray-800/50">
-        <button onClick={handleAdd} className="w-full bg-[#23232C] hover:bg-[#2D2D38] text-gray-300 font-medium py-3 rounded-xl text-sm transition-colors mb-2 shadow-inner border border-gray-700/50">
-          Add Item to Bill
+        <button onClick={handleAdd} className="w-full bg-primary hover:bg-primary-dark text-black font-bold py-3 rounded-lg flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(212,175,55,0.2)] transition-all">
+          <ShoppingCart size={18} /> {editingItemId ? 'UPDATE ITEM' : 'ADD TO BILL'}
         </button>
       </div>
     </div>

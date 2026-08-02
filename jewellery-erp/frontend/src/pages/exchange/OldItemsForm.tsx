@@ -1,18 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useExchangeStore } from '../../store/exchangeStore';
-import { Plus } from 'lucide-react';
+import { Plus, Edit2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function OldItemsForm() {
-  const addOldItem = useExchangeStore(s => s.addOldItem);
+  const { addOldItem, editingOldItem, updateOldItem, setEditingOldItem } = useExchangeStore();
   const [metal, setMetal] = useState<'Gold'|'Silver'>('Gold');
   
   const [itemName, setItemName] = useState('');
-  const [purity] = useState('22K');
+  const [purity, setPurity] = useState('22K');
   const [touch, setTouch] = useState(91.6);
   const [grossWeight, setGrossWeight] = useState(0);
   const [stoneWeight, setStoneWeight] = useState(0);
   const [rateApplied, setRateApplied] = useState(7245);
+
+  useEffect(() => {
+    if (editingOldItem) {
+      setMetal(editingOldItem.metal);
+      setItemName(editingOldItem.itemName);
+      setPurity(editingOldItem.purity);
+      setTouch(editingOldItem.touch);
+      setGrossWeight(editingOldItem.grossWeight);
+      setStoneWeight(editingOldItem.stoneWeight);
+      setRateApplied(editingOldItem.rateApplied);
+    }
+  }, [editingOldItem]);
 
   const netWeight = grossWeight - stoneWeight;
   const calculatedValue = netWeight * rateApplied * (touch / 100);
@@ -21,12 +33,28 @@ export default function OldItemsForm() {
     e.preventDefault();
     if (grossWeight <= 0 || !itemName) return toast.error('Enter valid details');
     
-    addOldItem({
-      id: Date.now().toString(),
+    const itemData = {
+      id: editingOldItem ? editingOldItem.id : Date.now().toString(),
       itemName, metal, purity, touch, grossWeight, stoneWeight, netWeight, rateApplied, calculatedValue
-    });
+    };
+
+    if (editingOldItem) {
+      updateOldItem(editingOldItem.id, itemData);
+      toast.success("Old item updated");
+    } else {
+      addOldItem(itemData);
+      toast.success("Old item added");
+    }
     
     // reset form partially
+    setItemName('');
+    setGrossWeight(0);
+    setStoneWeight(0);
+    setEditingOldItem(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingOldItem(null);
     setItemName('');
     setGrossWeight(0);
     setStoneWeight(0);
@@ -71,9 +99,17 @@ export default function OldItemsForm() {
             <div className="text-[10px] font-bold text-gray-500 uppercase">Valuation</div>
             <div className="text-xl font-bold font-mono text-green-400">₹ {calculatedValue.toLocaleString(undefined, {maximumFractionDigits: 2})}</div>
           </div>
-          <button type="submit" className="bg-primary/20 text-primary border border-primary/30 px-4 py-2 rounded-lg font-bold text-sm hover:bg-primary/30 transition-colors flex items-center gap-2">
-            <Plus size={16} /> Add to Exchange
-          </button>
+          <div className="flex gap-2">
+            {editingOldItem && (
+              <button type="button" onClick={handleCancelEdit} className="bg-gray-800 text-gray-300 border border-gray-700 px-4 py-2 rounded-lg font-bold text-sm hover:bg-gray-700 transition-colors flex items-center gap-2">
+                <X size={16} /> Cancel
+              </button>
+            )}
+            <button type="submit" className="bg-primary/20 text-primary border border-primary/30 px-4 py-2 rounded-lg font-bold text-sm hover:bg-primary/30 transition-colors flex items-center gap-2">
+              {editingOldItem ? <Edit2 size={16} /> : <Plus size={16} />} 
+              {editingOldItem ? 'Update Item' : 'Add to Exchange'}
+            </button>
+          </div>
         </div>
       </form>
     </div>

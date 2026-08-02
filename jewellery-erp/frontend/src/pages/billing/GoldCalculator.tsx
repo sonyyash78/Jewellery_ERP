@@ -1,9 +1,10 @@
 import { useBillingStore } from '../../store/billingStore';
 import type { BillItem } from '../../store/billingStore';
 import toast from 'react-hot-toast';
+import { ShoppingCart } from 'lucide-react';
 
 export default function GoldCalculator() {
-  const { goldForm: form, updateGoldForm: update, resetGoldForm: reset, addToCart, liveRates } = useBillingStore();
+  const { goldForm: form, updateGoldForm: update, resetGoldForm: reset, addToCart, liveRates, editingItemId } = useBillingStore();
 
   const netWeight = form.grossWeight - form.stoneWeight;
   const metalValue = netWeight * (form.touch / 100) * form.ratePerGm;
@@ -21,7 +22,7 @@ export default function GoldCalculator() {
       return;
     }
     const item: BillItem = {
-      id: Math.random().toString(36).substring(7),
+      id: editingItemId || Math.random().toString(36).substring(7),
       itemType: 'Gold',
       itemName: form.itemName || 'Gold Item',
       purityDisplay: form.purity,
@@ -187,10 +188,10 @@ export default function GoldCalculator() {
       </div>
 
       <div className="mt-2 pt-2 border-t border-gray-800/50">
-        <button onClick={handleAdd} className="w-full bg-[#23232C] hover:bg-[#2D2D38] text-gray-300 font-medium py-3 rounded-xl text-sm transition-colors mb-2 shadow-inner border border-gray-700/50">
-          Add Item to Bill
+        <button onClick={handleAdd} className="w-full bg-primary hover:bg-primary-dark text-black font-bold py-3 rounded-lg flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(212,175,55,0.2)] transition-all">
+          <ShoppingCart size={18} /> {editingItemId ? 'UPDATE ITEM' : 'ADD TO BILL'}
         </button>
-        <button className="w-full flex items-center justify-between bg-[#1A1A20] border border-gray-800 hover:border-gray-700 px-4 py-2.5 rounded-lg transition-colors group">
+        <button className="w-full flex items-center justify-between bg-[#1A1A20] border border-gray-800 hover:border-gray-700 px-4 py-2.5 rounded-lg transition-colors group mt-2">
           <span className="text-primary text-xs font-bold group-hover:text-primary-dark">Deposits & Gold Exchange</span>
           <span className="text-gray-500 text-xs transition-transform group-hover:translate-y-0.5">▼</span>
         </button>

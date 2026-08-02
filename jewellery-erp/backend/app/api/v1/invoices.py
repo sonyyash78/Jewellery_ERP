@@ -13,6 +13,7 @@ from app.models.silver_calculation import SilverCalculation
 from app.models.gold_rate import GoldRate
 from app.models.silver_rate import SilverRate
 from app.models.customer import Customer
+from app.models.customer_ledger import CustomerLedger
 from app.schemas.invoice import InvoiceCreate, InvoiceResponse, GoldCalcCreate, SilverCalcCreate
 from app.services.calculation_service import CalculationService
 from app.services.invoice_pdf_service import InvoicePDFService
@@ -199,6 +200,40 @@ def create_invoice(
                 
         db.commit()
         db.refresh(db_invoice)
+        
+        # 7. Update Customer Ledger if Customer is provided
+        if invoice_in.customer_id and customer:
+            amount_paid = float(invoice_in.amount_paid) if invoice_in.amount_paid is not None else float(db_invoice.grand_total)
+            
+            # Debit entry for the bill
+            ledger_debit = CustomerLedger(
+                customer_id=customer.id,
+                voucher_type='Invoice',
+                voucher_number=db_invoice.invoice_number,
+                description=f'Sales Bill {db_invoice.invoice_number}',
+                debit=float(db_invoice.grand_total),
+                credit=0.0,
+                balance=float(customer.outstanding_balance or 0) + float(db_invoice.grand_total)
+            )
+            customer.outstanding_balance = ledger_debit.balance
+            db.add(ledger_debit)
+            
+            # Credit entry for the payment
+            if amount_paid > 0:
+                ledger_credit = CustomerLedger(
+                    customer_id=customer.id,
+                    voucher_type='Payment',
+                    voucher_number=db_invoice.invoice_number,
+                    description=f'Payment for {db_invoice.invoice_number}',
+                    debit=0.0,
+                    credit=amount_paid,
+                    balance=float(customer.outstanding_balance) - amount_paid
+                )
+                customer.outstanding_balance = ledger_credit.balance
+                db.add(ledger_credit)
+                
+            db.commit()
+
         return db_invoice
         
     except HTTPException:
@@ -346,5 +381,41 @@ def get_invoice_pdf_data(
     """Get invoice data formatted for PDF generation."""
     try:
         return InvoicePDFService.get_invoice_pdf_data(id, db)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@router.get("/pdf-by-voucher/{voucher_number}")
+def get_pdf_data_by_voucher(
+    voucher_number: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get pdf data using just the voucher string."""
+    try:
+        # If it's a payment row, try to extract the base bill number
+        base_voucher = voucher_number
+        if base_voucher.startswith("PAY-"):
+            base_voucher = base_voucher[4:]
+            
+        if base_voucher.startswith("INV-"):
+            invoice = db.query(Invoice).filter(Invoice.invoice_number == base_voucher).first()
+            if not invoice:
+                raise ValueError(f"Invoice {base_voucher} not found")
+            return InvoicePDFService.get_invoice_pdf_data(invoice.id, db)
+            
+        elif base_voucher.startswith("EXC-"):
+            exchange_id = int(base_voucher.split("-")[1])
+            return InvoicePDFService.get_exchange_pdf_data(exchange_id, db)
+            
+        elif base_voucher.startswith("PUR-"):
+            from app.models.purchase import Purchase
+            purchase = db.query(Purchase).filter(Purchase.purchase_number == base_voucher).first()
+            if not purchase:
+                raise ValueError(f"Purchase {base_voucher} not found")
+            return InvoicePDFService.get_purchase_pdf_data(purchase.id, db)
+            
+        else:
+            raise ValueError(f"No PDF available for voucher type: {base_voucher}")
+            
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))

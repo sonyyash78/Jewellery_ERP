@@ -26,12 +26,66 @@ export default function BillTable() {
     columnHelper.display({
       id: 'actions',
       header: 'Actions',
-      cell: (props) => (
-        <div className="flex space-x-2">
-          <button className="text-gray-400 hover:text-blue-400 transition-colors"><Edit size={14} /></button>
-          <button onClick={() => removeFromCart(props.row.original.id)} className="text-gray-400 hover:text-red-400 transition-colors"><Trash2 size={14} /></button>
-        </div>
-      )
+      cell: (props) => {
+        const item = props.row.original;
+        
+        const handleEdit = () => {
+          if (item.itemType === 'Gold') {
+            useBillingStore.setState({ 
+              goldForm: item.rawGold || {
+                itemName: item.itemName,
+                category: '',
+                hsn: '',
+                purity: item.purityDisplay || '22K Gold',
+                touch: item.touchDisplay || 91.6,
+                grossWeight: item.grossWeight || 0,
+                stoneWeight: item.stoneWeight || 0,
+                ratePerGm: item.rateDisplay || 0,
+                makingChargeType: 'flat',
+                makingChargeValue: item.makingAmount || 0,
+                hallmark: item.hallmark || 0,
+                otherCharges: item.otherCharges || 0,
+                discount: item.discount || 0
+              }
+            });
+          } else if (item.itemType === 'Silver') {
+            useBillingStore.setState({ 
+              silverForm: item.rawSilver || {
+                itemName: item.itemName,
+                category: '',
+                hsn: '',
+                tanch: item.touchDisplay || 65,
+                silverPurity: item.purityDisplay || 'Fine',
+                grossWeight: item.grossWeight || 0,
+                ratePerKg: item.rateDisplay || 0,
+                makingChargeType: 'flat',
+                makingChargeValue: item.makingAmount || 0,
+                otherCharges: item.otherCharges || 0,
+                discount: item.discount || 0
+              }
+            });
+          }
+          useBillingStore.getState().setEditingItemId(item.id);
+          
+          // UX Feedback
+          import('react-hot-toast').then(mod => mod.default.success("Item loaded into calculator for editing"));
+          
+          // Find the scroll container and scroll it to top
+          const scrollContainer = document.querySelector('.custom-scrollbar.overflow-y-auto');
+          if (scrollContainer) {
+            scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+          } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        };
+
+        return (
+          <div className="flex space-x-2">
+            <button onClick={handleEdit} className="text-gray-400 hover:text-blue-400 transition-colors" title="Edit Item"><Edit size={14} /></button>
+            <button onClick={() => removeFromCart(item.id)} className="text-gray-400 hover:text-red-400 transition-colors" title="Delete Item"><Trash2 size={14} /></button>
+          </div>
+        );
+      }
     })
   ];
 
@@ -42,7 +96,7 @@ export default function BillTable() {
   });
 
   return (
-    <div className="bg-surface border border-gray-800 rounded-xl overflow-hidden mt-4 flex-1 flex flex-col min-h-[300px]">
+    <div className="bg-surface border border-gray-800 rounded-xl overflow-hidden mt-4 flex-shrink-0 flex flex-col min-h-[350px]">
       <div className="bg-[#312e81] border-b border-[#3730a3] px-4 py-2 flex justify-between items-center">
         <h3 className="font-bold text-white text-sm uppercase tracking-wider">Bill Item List</h3>
       </div>

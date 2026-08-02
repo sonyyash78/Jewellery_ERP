@@ -1,26 +1,23 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Download, Plus } from 'lucide-react';
+import { ArrowLeft, Download, FileText, RefreshCcw } from 'lucide-react';
 import { axiosClient } from '../../api/axiosClient';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
+import { generateInvoicePDF, generatePaymentReceiptPDF } from '../../utils/invoicePdfUtils';
 
 export default function SupplierProfile({ id, onBack }: { id: number, onBack: () => void }) {
   const [supplier, setSupplier] = useState<any>(null);
-  const [ledger, setLedger] = useState<any[]>([]);
+  const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-
-  // New Entry Form State
-  const [showEntryForm, setShowEntryForm] = useState(false);
-  const [form, setForm] = useState({ description: '', debit: '', credit: '', voucher_type: 'Manual', voucher_number: '' });
 
   const fetchData = async () => {
     try {
-      const [suppRes, ledgerRes] = await Promise.all([
+      const [suppRes, billsRes] = await Promise.all([
         axiosClient.get(`/sellers/${id}`),
-        axiosClient.get(`/sellers/${id}/ledger`)
+        axiosClient.get(`/sellers/${id}/bills`)
       ]);
       setSupplier(suppRes.data);
-      setLedger(ledgerRes.data);
+      setData(billsRes.data);
     } catch (e) {
       toast.error('Failed to fetch supplier profile');
       onBack();
@@ -33,12 +30,30 @@ export default function SupplierProfile({ id, onBack }: { id: number, onBack: ()
     fetchData();
   }, [id]);
 
+  const handleDownloadPDF = async (row: any) => {
+    if (row.bill_no && row.bill_no !== '-') {
+      try {
+        const res = await axiosClient.get(`/invoices/pdf-by-voucher/${row.bill_no}`);
+        await generateInvoicePDF(res.data);
+      } catch (e: any) {
+        toast.error('Failed to download PDF');
+      }
+    } else {
+      generatePaymentReceiptPDF(row, supplier, false);
+    }
+  };
+
   const handleExportExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(ledger.map(row => ({
+    if (!data?.bills) return;
+    const ws = XLSX.utils.json_to_sheet(data.bills.map((row: any) => ({
       Date: new Date(row.date).toLocaleString(),
-      Type: row.voucher_type,
-      VoucherNo: row.voucher_number || '-',
-      Description: row.description || '-',
+      Type: row.type,
+      Date: new Date(row.date).toLocaleString(),
+      Type: row.type,
+      RefNo: row.bill_no,
+      Summary: row.summary,
+      GoldChange: row.gold_change,
+      SilverChange: row.silver_change,
       Debit: row.debit,
       Credit: row.credit,
       Balance: row.balance
@@ -48,19 +63,7 @@ export default function SupplierProfile({ id, onBack }: { id: number, onBack: ()
     XLSX.writeFile(wb, `Supplier_${supplier.name}_Ledger.xlsx`);
   };
 
-  const handleAddEntry = async () => {
-    try {
-      await axiosClient.post(`/sellers/${id}/ledger`, form);
-      toast.success("Ledger entry added");
-      setShowEntryForm(false);
-      setForm({ description: '', debit: '', credit: '', voucher_type: 'Manual', voucher_number: '' });
-      fetchData();
-    } catch (e) {
-      toast.error('Failed to add entry');
-    }
-  };
-
-  if (loading || !supplier) return <div className="p-8 text-primary font-bold">Loading...</div>;
+  if (loading || !supplier || !data) return <div className="p-8 text-primary font-bold">Loading...</div>;
 
   return (
     <div className="h-[calc(100vh-6rem)] flex flex-col space-y-4">
@@ -80,97 +83,115 @@ export default function SupplierProfile({ id, onBack }: { id: number, onBack: ()
         </div>
         
         <div className="flex flex-col items-end gap-2">
-          <div className="text-right">
-            <div className="text-[10px] font-bold text-textMuted uppercase tracking-wider">Pending Amount</div>
-            <div className={`text-3xl font-bold font-mono ${supplier.outstanding_balance > 0 ? 'text-red-400' : 'text-green-400'}`}>
-              ₹ {Math.abs(supplier.outstanding_balance).toLocaleString()} {supplier.outstanding_balance > 0 ? '(Cr)' : '(Dr)'}
+          <div className="text-right flex gap-6 items-end bg-black/30 p-3 rounded-lg border border-gray-800/50">
+            <div>
+              <div className="text-[10px] font-bold text-yellow-500/80 uppercase tracking-wider mb-1">Fine Gold</div>
+              <div className="text-xl font-bold font-mono text-yellow-400">{Number(data.fine_gold_balance || 0).toFixed(3)} g</div>
+              <div className="text-[10px] text-gray-500 mt-1">@ ₹{data.current_gold_rate}/g</div>
+            </div>
+            <div className="w-px h-10 bg-gray-800"></div>
+            <div>
+              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Fine Silver</div>
+              <div className="text-xl font-bold font-mono text-gray-300">{Number(data.fine_silver_balance || 0).toFixed(3)} g</div>
+              <div className="text-[10px] text-gray-500 mt-1">@ ₹{data.current_silver_rate}/g</div>
+            </div>
+            <div className="w-px h-10 bg-gray-800"></div>
+            <div className="text-right">
+              <div className="text-[10px] font-bold text-textMuted uppercase tracking-wider mb-1">Pending Amount ₹</div>
+              <div className={`text-3xl font-bold font-mono ${data.outstanding_balance > 0 ? 'text-red-400' : 'text-green-400'}`}>
+                ₹ {Math.abs(data.outstanding_balance).toLocaleString()} {data.outstanding_balance > 0 ? '(Cr)' : '(Dr)'}
+              </div>
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-[10px] font-bold text-textMuted uppercase tracking-wider">Status</div>
-            <div className="text-sm font-bold font-mono text-primary">{supplier.is_active ? 'Active' : 'Inactive'}</div>
+          <div className="text-right mt-2">
+            <span className="text-[10px] font-bold text-textMuted uppercase tracking-wider mr-2">Status</span>
+            <span className="text-sm font-bold font-mono text-primary">{supplier.is_active ? 'Active' : 'Inactive'}</span>
           </div>
         </div>
       </div>
 
-      {/* Ledger Table */}
+      {/* Bills Table */}
       <div className="flex-1 bg-surface border border-gray-800 rounded-xl shadow-lg flex flex-col overflow-hidden">
-        <div className="p-4 border-b border-gray-800 flex justify-between items-center">
-          <h2 className="text-lg font-bold text-primary uppercase tracking-widest">Supplier Ledger</h2>
+        <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-black/20">
+          <h2 className="text-lg font-bold text-primary uppercase tracking-widest flex items-center gap-2">
+            <FileText size={18} /> Supplier Ledger
+          </h2>
           <div className="flex gap-3">
-            <button onClick={() => setShowEntryForm(true)} className="bg-primary/10 text-primary border border-primary/30 px-4 py-2 rounded font-bold text-sm hover:bg-primary/20 transition-colors flex items-center gap-2">
-              <Plus size={16} /> Manual Entry
-            </button>
             <button onClick={handleExportExcel} className="bg-background text-white border border-gray-700 px-4 py-2 rounded font-bold text-sm hover:border-gray-500 transition-colors flex items-center gap-2">
               <Download size={16} /> Export Excel
             </button>
           </div>
         </div>
 
-        {showEntryForm && (
-          <div className="p-4 bg-black/40 border-b border-gray-800 grid grid-cols-5 gap-4 items-end">
-            <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Voucher Type</label>
-              <select value={form.voucher_type} onChange={e=>setForm({...form, voucher_type: e.target.value})} className="w-full bg-background border border-gray-700 rounded p-2 text-sm text-textMain focus:border-primary outline-none">
-                <option value="Manual">Manual Entry</option>
-                <option value="Payment">Payment Made</option>
-                <option value="Opening Balance">Opening Balance</option>
-              </select>
-            </div>
-            <div className="col-span-2">
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Description</label>
-              <input value={form.description} onChange={e=>setForm({...form, description: e.target.value})} className="w-full bg-background border border-gray-700 rounded p-2 text-sm text-textMain focus:border-primary outline-none" placeholder="e.g. Paid via NEFT" />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Debit (We Pay) ₹</label>
-              <input type="number" value={form.debit} onChange={e=>setForm({...form, debit: e.target.value})} className="w-full bg-background border border-gray-700 rounded p-2 text-sm text-textMain focus:border-primary outline-none font-mono" />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Credit (Purchase) ₹</label>
-              <div className="flex gap-2">
-                <input type="number" value={form.credit} onChange={e=>setForm({...form, credit: e.target.value})} className="w-full bg-background border border-gray-700 rounded p-2 text-sm text-textMain focus:border-primary outline-none font-mono" />
-                <button onClick={handleAddEntry} className="bg-primary hover:bg-primary-dark text-black px-4 py-2 rounded font-bold text-sm transition-colors">Save</button>
-              </div>
-            </div>
-          </div>
-        )}
-
         <div className="flex-1 overflow-auto custom-scrollbar">
           <table className="w-full text-left text-sm text-textMuted">
-            <thead className="bg-background sticky top-0 border-b border-gray-800">
+            <thead className="bg-background sticky top-0 border-b border-gray-800 z-10">
               <tr>
                 <th className="py-3 px-4 font-bold uppercase tracking-wider text-xs">Date</th>
-                <th className="py-3 px-4 font-bold uppercase tracking-wider text-xs">Type / Ref</th>
-                <th className="py-3 px-4 font-bold uppercase tracking-wider text-xs">Description</th>
+                <th className="py-3 px-4 font-bold uppercase tracking-wider text-xs">Type</th>
+                <th className="py-3 px-4 font-bold uppercase tracking-wider text-xs">Ref No</th>
+                <th className="py-3 px-4 font-bold uppercase tracking-wider text-xs">Details / Bill</th>
+                <th className="py-3 px-4 font-bold uppercase tracking-wider text-xs text-right text-yellow-500">Gold (g)</th>
+                <th className="py-3 px-4 font-bold uppercase tracking-wider text-xs text-right text-gray-300">Silver (g)</th>
                 <th className="py-3 px-4 font-bold uppercase tracking-wider text-xs text-right text-red-400">Debit (₹)</th>
                 <th className="py-3 px-4 font-bold uppercase tracking-wider text-xs text-right text-green-400">Credit (₹)</th>
-                <th className="py-3 px-4 font-bold uppercase tracking-wider text-xs text-right">Balance (₹)</th>
+                <th className="py-3 px-4 font-bold uppercase tracking-wider text-xs text-right text-primary">Balance (₹)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800/50">
-              {ledger.map((row) => (
+              {data.bills.map((row: any) => (
                 <tr key={row.id} className="hover:bg-gray-800/30 transition-colors">
-                  <td className="py-3 px-4 whitespace-nowrap">{new Date(row.date).toLocaleString()}</td>
+                  <td className="py-3 px-4 whitespace-nowrap text-xs">{new Date(row.date).toLocaleString()}</td>
                   <td className="py-3 px-4">
-                    <div className="font-bold text-gray-300">{row.voucher_type}</div>
-                    <div className="text-xs">{row.voucher_number}</div>
+                    <span className="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-orange-900/30 text-orange-400">
+                      {row.type}
+                    </span>
                   </td>
-                  <td className="py-3 px-4 max-w-xs truncate" title={row.description}>{row.description || '-'}</td>
-                  <td className="py-3 px-4 text-right font-mono text-red-400">{Number(row.debit) > 0 ? Number(row.debit).toLocaleString() : '-'}</td>
-                  <td className="py-3 px-4 text-right font-mono text-green-400">{Number(row.credit) > 0 ? Number(row.credit).toLocaleString() : '-'}</td>
-                  <td className="py-3 px-4 text-right font-mono font-bold text-primary">{Number(row.balance).toLocaleString()} {row.balance > 0 ? 'Cr' : 'Dr'}</td>
+                  <td className="py-3 px-4 font-mono text-gray-300">{row.bill_no}</td>
+                  <td className="py-3 px-4 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate max-w-[200px]" title={row.summary}>{row.summary}</span>
+                      <button 
+                        onClick={() => handleDownloadPDF(row)}
+                        className="bg-primary/20 text-primary hover:bg-primary hover:text-black px-2 py-1 rounded transition-colors flex items-center gap-1 ml-auto"
+                        title="Download PDF"
+                      >
+                        <Download size={14} /> <span className="hidden sm:inline">PDF</span>
+                      </button>
+                    </div>
+                  </td>
+                  
+                  <td className="py-3 px-4 text-right font-mono text-yellow-500 bg-yellow-900/5">
+                    {Number(row.gold_change) !== 0 ? (Number(row.gold_change) > 0 ? '+' : '') + Number(row.gold_change).toFixed(3) : '-'}
+                  </td>
+                  <td className="py-3 px-4 text-right font-mono text-gray-400 bg-gray-800/20">
+                    {Number(row.silver_change) !== 0 ? (Number(row.silver_change) > 0 ? '+' : '') + Number(row.silver_change).toFixed(3) : '-'}
+                  </td>
+                  <td className="py-3 px-4 text-right font-mono font-bold text-red-400">
+                    {Number(row.debit) > 0 ? Number(row.debit).toLocaleString() : '-'}
+                  </td>
+                  <td className="py-3 px-4 text-right font-mono font-bold text-green-400">
+                    {Number(row.credit) > 0 ? Number(row.credit).toLocaleString() : '-'}
+                  </td>
+                  <td className="py-3 px-4 text-right font-mono font-bold text-primary">
+                    {Number(row.balance).toLocaleString()} {Number(row.balance) > 0 ? '(Cr)' : (Number(row.balance) < 0 ? '(Dr)' : '')}
+                  </td>
                 </tr>
               ))}
-              {ledger.length === 0 && (
+              {data.bills.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-gray-500 italic">No ledger entries found.</td>
+                  <td colSpan={8} className="py-12 text-center text-gray-500 italic">
+                    <div className="flex flex-col items-center gap-2">
+                      <RefreshCcw size={24} className="opacity-20" />
+                      <p>No ledger entries found for this supplier.</p>
+                    </div>
+                  </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
       </div>
-
     </div>
   );
 }

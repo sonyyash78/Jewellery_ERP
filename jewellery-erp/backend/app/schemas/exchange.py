@@ -22,6 +22,7 @@ class ExchangeNewItemCreate(BaseModel):
 
 class ExchangeCreate(BaseModel):
     customer_id: int
+    amount_paid: Optional[float] = None
     total_old_value: float
     total_new_value: float
     gst_amount: float

@@ -1,14 +1,14 @@
 import { usePurchaseStore } from '../../store/purchaseStore';
 import type { PurchaseItem } from '../../store/purchaseStore';
-import { PlusCircle, RotateCcw } from 'lucide-react';
+import { RotateCcw, ShoppingCart } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const InputLabel = ({ label }: { label: string }) => (
-  <label className="block text-[10px] font-bold text-textMuted uppercase tracking-wider mb-1">{label}</label>
+  <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">{label}</label>
 );
 
 export default function PurchaseSilver() {
-  const { silverForm: form, updateSilverForm: update, resetForms: reset, addItem } = usePurchaseStore();
+  const { silverForm: form, updateSilverForm: update, resetForms: reset, addItem, editingItemId } = usePurchaseStore();
 
   const finalTanch = (form.tanch || 0) + (form.wastage || 0); // E.g., 70% + 5% wastage = 75% final recovery
   const recoveredSilver = (form.grossWeight || 0) * (finalTanch / 100);
@@ -23,7 +23,7 @@ export default function PurchaseSilver() {
       return;
     }
     const item: PurchaseItem = {
-      id: Math.random().toString(36).substring(7),
+      id: editingItemId || Math.random().toString(36).substring(7),
       metalType: 'Silver',
       itemName: form.itemName || 'Old Silver',
       category: 'Scrap',
@@ -49,7 +49,7 @@ export default function PurchaseSilver() {
 
   return (
     <div className="bg-surface border border-gray-700 rounded-xl p-4 shadow-lg flex flex-col h-[600px]">
-      <h3 className="text-gray-300 font-bold tracking-widest uppercase text-sm mb-4 border-b border-gray-800 pb-2">Scrap Silver Purchase</h3>
+      <h3 className="text-gray-300 font-bold tracking-widest uppercase text-sm mb-4 border-b border-gray-800 pb-2">Silver Purchase</h3>
       
       <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
         <div className="grid grid-cols-1 gap-3">
@@ -90,11 +90,11 @@ export default function PurchaseSilver() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-gray-800">
-        <button onClick={handleAdd} className="col-span-2 bg-gray-200 hover:bg-white text-black font-bold py-2 rounded text-sm flex items-center justify-center gap-1 transition-colors">
-          <PlusCircle size={16} /> Add To Receipt
+      <div className="mt-2 pt-2 border-t border-gray-800/50">
+        <button onClick={handleAdd} className="w-full bg-primary hover:bg-primary-dark text-black font-bold py-3 rounded-lg flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(212,175,55,0.2)] transition-all">
+          <ShoppingCart size={18} /> {editingItemId ? 'UPDATE ITEM' : 'ADD TO RECEIPT'}
         </button>
-        <button onClick={reset} className="bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 rounded text-sm flex items-center justify-center gap-1 transition-colors">
+        <button onClick={reset} className="w-full mt-2 bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 rounded text-sm flex items-center justify-center gap-1 transition-colors">
           <RotateCcw size={16} /> Reset
         </button>
       </div>

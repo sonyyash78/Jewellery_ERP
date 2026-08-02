@@ -13,6 +13,8 @@ class CustomerBase(BaseModel):
     gst_number: Optional[str] = None
     credit_limit: float = 0
     outstanding_balance: float = 0
+    fine_gold_balance: float = 0
+    fine_silver_balance: float = 0
 
     @field_validator('phone_number')
     @classmethod
@@ -41,6 +43,8 @@ class CustomerUpdate(BaseModel):
     gst_number: Optional[str] = None
     credit_limit: Optional[float] = None
     outstanding_balance: Optional[float] = None
+    fine_gold_balance: Optional[float] = None
+    fine_silver_balance: Optional[float] = None
 
 class CustomerResponse(CustomerBase):
     id: int

@@ -17,6 +17,8 @@ class Customer(Base):
     aadhaar_pan = Column(String(50))
     credit_limit = Column(Numeric(12, 2), default=0.0)
     outstanding_balance = Column(Numeric(12, 2), default=0.0)
+    fine_gold_balance = Column(Numeric(10, 3), default=0.0)
+    fine_silver_balance = Column(Numeric(10, 3), default=0.0)
     is_active = Column(Boolean, default=True)
     is_deleted = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

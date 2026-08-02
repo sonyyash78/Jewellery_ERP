@@ -1,17 +1,17 @@
 import { useBillingStore } from '../../store/billingStore';
-import { Calculator, Save, Printer, RefreshCw, Smartphone } from 'lucide-react';
-import { axiosClient } from '../../api/axiosClient';
+import { Calculator, Save, Printer, Smartphone } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useState } from 'react';
-import PostBillModal from './PostBillModal';
+import CheckoutModal from './CheckoutModal';
 import LiveRatesModal from './LiveRatesModal';
 
 export default function LiveBillSummary() {
-  const { cart, gstState, clearCart, selectedCustomerId, liveRates } = useBillingStore();
-  const [loading, setLoading] = useState(false);
-  const [showModal, setShowModal] = useState(false);
+  const { cart, gstState, clearCart, liveRates, globalDiscount, setGlobalDiscount } = useBillingStore();
+  const [showCheckout, setShowCheckout] = useState(false);
   const [showRatesModal, setShowRatesModal] = useState(false);
-  const [generatedInvoiceId, setGeneratedInvoiceId] = useState<number | null>(null);
+  
+  // To hold the prepared payload for CheckoutModal
+  const [checkoutPayload, setCheckoutPayload] = useState<any>(null);
 
   const totalGross = cart.reduce((sum, item) => sum + item.grossWeight, 0);
   const totalStone = cart.reduce((sum, item) => sum + item.stoneWeight, 0);
@@ -20,15 +20,17 @@ export default function LiveBillSummary() {
   const totalMaking = cart.reduce((sum, item) => sum + item.makingAmount, 0);
   const totalHallmark = cart.reduce((sum, item) => sum + item.hallmark, 0);
   const totalOther = cart.reduce((sum, item) => sum + item.otherCharges, 0);
-  const totalDiscount = cart.reduce((sum, item) => sum + item.discount, 0);
+  const totalItemDiscount = cart.reduce((sum, item) => sum + item.discount, 0);
+  const totalDiscount = totalItemDiscount + globalDiscount;
   
-  const taxableAmount = cart.reduce((sum, item) => sum + item.taxableAmount, 0);
+  const baseTaxableAmount = cart.reduce((sum, item) => sum + item.taxableAmount, 0);
+  const taxableAmount = Math.max(0, baseTaxableAmount - globalDiscount);
   
   let cgst = 0, sgst = 0, igst = 0;
   if (gstState === 'same_state') {
     cgst = taxableAmount * 0.015;
     sgst = taxableAmount * 0.015;
-  } else {
+  } else if (gstState === 'different_state') {
     igst = taxableAmount * 0.03;
   }
 
@@ -39,20 +41,18 @@ export default function LiveBillSummary() {
   const equivalentGold = liveRates.gold24k > 0 ? grandTotal / liveRates.gold24k : 0;
   const equivalentSilver = liveRates.silver > 0 ? grandTotal / (liveRates.silver / 10) : 0;
 
-  const handleGenerate = async () => {
+  const handleGenerate = () => {
     if (cart.length === 0) {
       toast.error("Cart is empty");
       return;
     }
-    setLoading(true);
     
     const payload = {
-      customer_id: selectedCustomerId || null,
-      subtotal: taxableAmount,
+      // customer_id and amount_paid will be added by CheckoutModal
+      subtotal: baseTaxableAmount,
       tax_amount: cgst + sgst + igst,
-      discount_amount: totalDiscount,
+      discount_amount: globalDiscount,
       grand_total: grandTotal,
-      status: 'Paid',
       items: cart.map(item => ({
         item_name: item.itemName,
         item_type: item.itemType,
@@ -82,22 +82,8 @@ export default function LiveBillSummary() {
       }))
     };
 
-    try {
-      const res = await axiosClient.post('/invoices/', payload);
-      
-      if (selectedCustomerId) {
-        toast.success(`Invoice ${res.data.invoice_number} generated successfully!`);
-        clearCart();
-        useBillingStore.getState().setSelectedCustomerId(null);
-      } else {
-        setGeneratedInvoiceId(res.data.id);
-        setShowModal(true);
-      }
-    } catch (e: any) {
-      toast.error(e.response?.data?.detail || "Failed to generate");
-    } finally {
-      setLoading(false);
-    }
+    setCheckoutPayload(payload);
+    setShowCheckout(true);
   };
 
   return (
@@ -123,7 +109,19 @@ export default function LiveBillSummary() {
         <div className="flex justify-between"><span className="text-textMuted">Making Total</span><span className="font-mono">₹{totalMaking.toFixed(2)}</span></div>
         <div className="flex justify-between"><span className="text-textMuted">Hallmark</span><span className="font-mono">₹{totalHallmark.toFixed(2)}</span></div>
         <div className="flex justify-between"><span className="text-textMuted">Other Chg</span><span className="font-mono">₹{totalOther.toFixed(2)}</span></div>
-        <div className="flex justify-between text-red-400"><span className="">Discount</span><span className="font-mono">- ₹{totalDiscount.toFixed(2)}</span></div>
+        <div className="flex justify-between items-center text-red-400 mt-1">
+          <span className="">Bill Discount</span>
+          <div className="flex items-center">
+            <span className="mr-1">- ₹</span>
+            <input 
+              type="number" 
+              className="bg-gray-900 border border-red-900/50 rounded w-20 text-right px-1 font-mono text-red-400 outline-none focus:border-red-500"
+              value={globalDiscount === 0 ? '' : globalDiscount}
+              onChange={e => setGlobalDiscount(Number(e.target.value))}
+              placeholder="0.00"
+            />
+          </div>
+        </div>
         
         <div className="flex justify-between items-center py-2 bg-gray-900/50 rounded px-2 border border-gray-800 my-2">
           <span className="text-primary font-bold">Taxable Amount</span>
@@ -133,11 +131,15 @@ export default function LiveBillSummary() {
         <div className="space-y-1 pl-2 border-l-2 border-gray-800">
           <label className="flex items-center space-x-2 cursor-pointer mb-2">
             <input type="radio" checked={gstState === 'same_state'} onChange={() => useBillingStore.getState().setGstState('same_state')} className="text-primary accent-primary w-3 h-3" />
-            <span className="text-textMuted">Same State (CGST+SGST)</span>
+            <span className="text-textMuted">Same State (3%)</span>
           </label>
           <label className="flex items-center space-x-2 cursor-pointer mb-2">
             <input type="radio" checked={gstState === 'different_state'} onChange={() => useBillingStore.getState().setGstState('different_state')} className="text-primary accent-primary w-3 h-3" />
-            <span className="text-textMuted">Interstate (IGST)</span>
+            <span className="text-textMuted">Interstate (3%)</span>
+          </label>
+          <label className="flex items-center space-x-2 cursor-pointer mb-2">
+            <input type="radio" checked={gstState === 'none'} onChange={() => useBillingStore.getState().setGstState('none')} className="text-primary accent-primary w-3 h-3" />
+            <span className="text-textMuted">Without GST (0%)</span>
           </label>
           
           {gstState === 'same_state' ? (
@@ -145,8 +147,10 @@ export default function LiveBillSummary() {
               <div className="flex justify-between"><span className="text-gray-500">CGST 1.5%</span><span className="font-mono">₹{cgst.toFixed(2)}</span></div>
               <div className="flex justify-between"><span className="text-gray-500">SGST 1.5%</span><span className="font-mono">₹{sgst.toFixed(2)}</span></div>
             </>
-          ) : (
+          ) : gstState === 'different_state' ? (
             <div className="flex justify-between"><span className="text-gray-500">IGST 3%</span><span className="font-mono">₹{igst.toFixed(2)}</span></div>
+          ) : (
+            <div className="flex justify-between"><span className="text-gray-500">GST 0%</span><span className="font-mono">₹0.00</span></div>
           )}
         </div>
         
@@ -176,22 +180,25 @@ export default function LiveBillSummary() {
           <button className="flex items-center justify-center space-x-1 bg-background border border-gray-700 hover:border-gray-500 py-2 rounded transition-colors"><Save size={14}/> <span>Draft</span></button>
           <button className="flex items-center justify-center space-x-1 bg-background border border-gray-700 hover:border-gray-500 py-2 rounded transition-colors"><Printer size={14}/> <span>Print</span></button>
           <button className="flex items-center justify-center space-x-1 bg-green-900/30 border border-green-800 text-green-400 hover:bg-green-800/50 py-2 rounded transition-colors col-span-2"><Smartphone size={14}/> <span>WhatsApp / SMS</span></button>
-          <button onClick={handleGenerate} disabled={loading} className="col-span-2 flex items-center justify-center space-x-1 bg-primary hover:bg-primary-dark text-black font-bold py-3 rounded transition-colors shadow-[0_0_15px_rgba(212,175,55,0.2)] disabled:opacity-50">
-            {loading ? <RefreshCw className="animate-spin" size={16} /> : <Calculator size={16} />}
-            <span>{loading ? 'Generating...' : 'GENERATE BILL (F7)'}</span>
+          <button onClick={handleGenerate} className="col-span-2 flex items-center justify-center space-x-1 bg-primary hover:bg-primary-dark text-black font-bold py-3 rounded transition-colors shadow-[0_0_15px_rgba(212,175,55,0.2)] disabled:opacity-50">
+            <Calculator size={16} />
+            <span>GENERATE BILL (F7)</span>
           </button>
         </div>
       </div>
       
-      {showModal && generatedInvoiceId && (
-        <PostBillModal 
-          invoiceId={generatedInvoiceId} 
-          onClose={() => {
-            setShowModal(false);
-            setGeneratedInvoiceId(null);
+      {showCheckout && checkoutPayload && (
+        <CheckoutModal 
+          payload={checkoutPayload}
+          grandTotal={grandTotal}
+          onClose={() => setShowCheckout(false)}
+          onSuccess={() => {
+            setShowCheckout(false);
+            setCheckoutPayload(null);
             clearCart();
             useBillingStore.getState().setSelectedCustomerId(null);
-          }} 
+            // We can optionally show the print dialog here or navigate
+          }}
         />
       )}
 

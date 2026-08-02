@@ -11,6 +11,7 @@ from app.models.gold_calculation import GoldCalculation
 from app.models.silver_calculation import SilverCalculation
 from app.models.purchase import Purchase
 from app.models.exchange import Exchange
+from app.models.supplier_ledger import SupplierLedger
 from app.services.calculation_service import CalculationService
 
 
@@ -61,6 +62,22 @@ class InvoicePDFService:
             'discount_amount': float(invoice.discount_amount),
             'grand_total': float(invoice.grand_total)
         }
+        
+        # Calculate amount paid from ledger if customer exists, otherwise assume fully paid
+        amount_paid = invoice_data['grand_total']
+        if invoice.customer_id:
+            from app.models.customer_ledger import CustomerLedger
+            payment_entry = db.query(CustomerLedger).filter(
+                CustomerLedger.voucher_type == 'Payment',
+                CustomerLedger.voucher_number == invoice.invoice_number
+            ).first()
+            if payment_entry:
+                amount_paid = float(payment_entry.credit)
+            else:
+                amount_paid = 0.0
+                
+        invoice_data['amount_paid'] = amount_paid
+        invoice_data['balance_due'] = invoice_data['grand_total'] - amount_paid
         
         # Customer details
         customer_data = {
@@ -173,6 +190,15 @@ class InvoicePDFService:
             'grand_total': float(purchase.grand_total)
         }
         
+        # Fetch payment amount from SupplierLedger if it exists
+        payment_entry = db.query(SupplierLedger).filter(
+            SupplierLedger.voucher_number == f"PAY-{purchase.purchase_number}"
+        ).first()
+        amount_paid = float(payment_entry.debit) if payment_entry else 0.0
+        invoice_data['amount_paid'] = amount_paid
+        invoice_data['balance_due'] = invoice_data['grand_total'] - amount_paid
+
+        
         customer_data = {
             'name': purchase.seller.name if purchase.seller else 'Unknown Seller',
             'phone': purchase.seller.mobile if purchase.seller else '',
@@ -244,6 +270,16 @@ class InvoicePDFService:
             'total_new_value': float(exchange.total_new_value),
             'difference_amount': float(exchange.difference_amount)
         }
+        
+        # Fetch payment amount from CustomerLedger if it exists
+        from app.models.customer_ledger import CustomerLedger
+        payment_entry = db.query(CustomerLedger).filter(
+            CustomerLedger.voucher_number == f"PAY-EXC-{exchange.id}"
+        ).first()
+        
+        amount_paid = float(payment_entry.credit) - float(payment_entry.debit) if payment_entry else 0.0
+        invoice_data['amount_paid'] = amount_paid
+        invoice_data['balance_due'] = invoice_data['grand_total'] - amount_paid
         
         customer_data = {
             'name': f"{exchange.customer.first_name} {exchange.customer.last_name or ''}".strip() if exchange.customer else 'Unknown Customer',

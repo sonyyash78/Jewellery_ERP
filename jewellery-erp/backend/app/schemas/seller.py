@@ -9,6 +9,8 @@ class SellerBase(BaseModel):
     city: Optional[str] = None
     gst_number: Optional[str] = None
     outstanding_balance: float = 0
+    fine_gold_balance: float = 0
+    fine_silver_balance: float = 0
     is_active: bool = True
 
 class SellerCreate(SellerBase):

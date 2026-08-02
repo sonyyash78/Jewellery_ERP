@@ -85,6 +85,25 @@ def create_exchange(
         )
         db.add(ledger)
 
+    # Process amount_paid
+    amount_paid = float(exchange_in.amount_paid or 0)
+    if amount_paid != 0:
+        pmt_debit = abs(amount_paid) if amount_paid < 0 else 0
+        pmt_credit = amount_paid if amount_paid > 0 else 0
+        
+        customer.outstanding_balance = float(customer.outstanding_balance or 0) + pmt_debit - pmt_credit
+        
+        pmt_ledger = CustomerLedger(
+            customer_id=customer.id,
+            voucher_type="Payment",
+            voucher_number=f"PAY-EXC-{exchange.id}",
+            description=f"Payment for Exchange EXC-{exchange.id}",
+            debit=pmt_debit,
+            credit=pmt_credit,
+            balance=customer.outstanding_balance
+        )
+        db.add(pmt_ledger)
+
     db.commit()
     db.refresh(exchange)
     return exchange

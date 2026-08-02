@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Users, Building2, Wallet, PlusCircle, Search, X } from 'lucide-react';
+import { getErrorMessage } from '../../utils/errorUtils';
 import { axiosClient } from '../../api/axiosClient';
 import toast from 'react-hot-toast';
 import CustomerProfile from './CustomerProfile';
@@ -82,8 +83,8 @@ export default function CRM() {
       setEditingId(null);
       fetchData();
     } catch (e: any) {
-      toast.error(e.response?.data?.detail || 'Failed to save customer');
-    }
+      toast.error(getErrorMessage(e, 'Failed to save customer'));
+    } finally {};
   };
 
   const handleAddSupplier = async (e: React.FormEvent) => {
@@ -107,8 +108,8 @@ export default function CRM() {
       setEditingId(null);
       fetchData();
     } catch (e: any) {
-      toast.error(e.response?.data?.detail || 'Failed to save supplier');
-    }
+      toast.error(getErrorMessage(e, 'Failed to save supplier'));
+    } finally {};
   };
 
   const deleteCustomer = async (id: number) => {
@@ -118,6 +119,16 @@ export default function CRM() {
       fetchData();
     } catch (e) {
       toast.error('Failed to delete customer');
+    }
+  };
+
+  const deleteSupplier = async (id: number) => {
+    try {
+      await axiosClient.delete(`/sellers/${id}`);
+      toast.success('Supplier deleted successfully');
+      fetchData();
+    } catch (e) {
+      toast.error('Failed to delete supplier');
     }
   };
 
@@ -250,11 +261,19 @@ export default function CRM() {
                     >
                       Ledger
                     </button>
-                    {tab === 'customers' && (
+                    {tab === 'customers' ? (
                       <button 
                         onClick={() => deleteCustomer(person.id)}
                         className="bg-red-500/20 text-red-500 px-3 py-1 rounded text-xs font-bold uppercase hover:bg-red-500/30 transition-colors"
                         aria-label={`Delete ${person.first_name}`}
+                      >
+                        Delete
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => deleteSupplier(person.id)}
+                        className="bg-red-500/20 text-red-500 px-3 py-1 rounded text-xs font-bold uppercase hover:bg-red-500/30 transition-colors"
+                        aria-label={`Delete ${person.name}`}
                       >
                         Delete
                       </button>

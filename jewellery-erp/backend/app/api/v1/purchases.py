@@ -44,7 +44,14 @@ def create_unified_purchase(
     """Create a unified purchase with seller info and items array. Backend recalculates all totals."""
     
     # Get or create seller
-    seller = get_or_create_seller(db, purchase_in.seller)
+    if purchase_in.seller_id:
+        seller = db.query(Seller).filter(Seller.id == purchase_in.seller_id).first()
+        if not seller:
+            raise HTTPException(status_code=404, detail="Seller not found")
+    elif purchase_in.seller:
+        seller = get_or_create_seller(db, purchase_in.seller)
+    else:
+        raise HTTPException(status_code=400, detail="Seller information is required")
     
     # Recalculate all totals from items using CalculationService
     purchase_taxable = Decimal('0')
@@ -129,10 +136,10 @@ def create_unified_purchase(
     db_purchase.igst = float(purchase_igst)
     db_purchase.grand_total = float(purchase_grand_total)
     
-    # Update seller outstanding balance
+    # Update seller outstanding balance (We owe them)
     seller.outstanding_balance = float(seller.outstanding_balance or 0) + float(purchase_grand_total)
     
-    # Create supplier ledger entry
+    # Create supplier ledger entry for the purchase
     from app.models.supplier_ledger import SupplierLedger
     ledger_entry = SupplierLedger(
         seller_id=seller.id,
@@ -144,6 +151,21 @@ def create_unified_purchase(
         balance=seller.outstanding_balance
     )
     db.add(ledger_entry)
+    
+    # Process payment if any amount was paid
+    amount_paid = float(purchase_in.amount_paid or 0)
+    if amount_paid > 0:
+        seller.outstanding_balance -= amount_paid
+        payment_entry = SupplierLedger(
+            seller_id=seller.id,
+            voucher_type='Payment',
+            voucher_number=f"PAY-{db_purchase.purchase_number}",
+            description=f"Payment for Purchase {db_purchase.purchase_number}",
+            debit=amount_paid,
+            credit=0,
+            balance=seller.outstanding_balance
+        )
+        db.add(payment_entry)
     
     db.commit()
     db.refresh(db_purchase)

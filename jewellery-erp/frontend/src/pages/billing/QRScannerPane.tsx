@@ -5,6 +5,7 @@ import { axiosClient } from '../../api/axiosClient';
 import { useBillingStore } from '../../store/billingStore';
 import type { BillItem } from '../../store/billingStore';
 import toast from 'react-hot-toast';
+import { getErrorMessage } from '../../utils/errorUtils';
 
 export default function QRScannerPane() {
   const [mode, setMode] = useState<'camera' | 'manual'>('manual');
@@ -123,8 +124,8 @@ export default function QRScannerPane() {
       toast.success(`Scanned: ${item.item_name}`);
 
     } catch (e: any) {
-      if (e.response?.status === 400) {
-        toast.error(e.response.data.detail);
+      if (e.response?.status === 400 || e.response?.status === 422) {
+        toast.error(getErrorMessage(e));
       } else if (e.response?.status === 404) {
         toast.error(`Item ${code} not found in inventory.`);
       } else {

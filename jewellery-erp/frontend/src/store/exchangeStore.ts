@@ -28,13 +28,13 @@ export interface NewItem {
 
 interface ExchangeStoreState {
   customerId: number | null;
-  gstState: 'same_state' | 'different_state';
+  gstState: 'same_state' | 'different_state' | 'none';
   
   oldItems: OldItem[];
   newItems: NewItem[];
   
   setCustomerId: (id: number | null) => void;
-  setGstState: (state: 'same_state' | 'different_state') => void;
+  setGstState: (state: 'same_state' | 'different_state' | 'none') => void;
   
   addOldItem: (item: OldItem) => void;
   removeOldItem: (id: string) => void;
@@ -42,6 +42,10 @@ interface ExchangeStoreState {
   addNewItem: (item: NewItem) => void;
   removeNewItem: (stockItemId: number) => void;
   
+  editingOldItem: OldItem | null;
+  setEditingOldItem: (item: OldItem | null) => void;
+  updateOldItem: (id: string, item: OldItem) => void;
+
   clearExchange: () => void;
 }
 
@@ -60,5 +64,12 @@ export const useExchangeStore = create<ExchangeStoreState>((set) => ({
   addNewItem: (item) => set((state) => ({ newItems: [...state.newItems, item] })),
   removeNewItem: (id) => set((state) => ({ newItems: state.newItems.filter(i => i.stockItemId !== id) })),
   
-  clearExchange: () => set({ customerId: null, oldItems: [], newItems: [], gstState: 'same_state' })
+  editingOldItem: null,
+  setEditingOldItem: (item) => set({ editingOldItem: item }),
+  updateOldItem: (id, item) => set((state) => ({
+    oldItems: state.oldItems.map(i => i.id === id ? item : i),
+    editingOldItem: null
+  })),
+
+  clearExchange: () => set({ customerId: null, oldItems: [], newItems: [], gstState: 'same_state', editingOldItem: null })
 }));

@@ -313,6 +313,16 @@ export default function InvoiceHistory() {
               <span>Grand Total:</span>
               <span>Rs. ${data.totals.grand_total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
             </div>
+            ${data.invoice.amount_paid !== undefined ? `
+            <div class="totals-row" style="font-weight: bold; color: #2e7d32; margin-top: 5px;">
+              <span>Amount Paid:</span>
+              <span>Rs. ${data.invoice.amount_paid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+            </div>
+            <div class="totals-row" style="font-weight: bold; color: #d32f2f;">
+              <span>Balance Due:</span>
+              <span>Rs. ${data.invoice.balance_due.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+            </div>
+            ` : ''}
           </div>
           
           <div style="margin-top: 40px; font-size: 12px; color: #666;">
@@ -333,6 +343,7 @@ export default function InvoiceHistory() {
   const getStatusBadge = (status: string) => {
     const colors: Record<string, string> = {
       'Paid': 'bg-green-500/20 text-green-400',
+      'Partial': 'bg-blue-500/20 text-blue-400',
       'Draft': 'bg-yellow-500/20 text-yellow-400',
       'Cancelled': 'bg-red-500/20 text-red-400'
     };
@@ -399,6 +410,7 @@ export default function InvoiceHistory() {
           >
             <option value="">All Status</option>
             <option value="Paid">Paid</option>
+            <option value="Partial">Partial</option>
             <option value="Draft">Draft</option>
             <option value="Cancelled">Cancelled</option>
           </select>
