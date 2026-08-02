@@ -247,25 +247,36 @@ class ReportService:
         """
         # For now, we'll use a simplified approach
         # In production, you'd track purchase cost per item in inventory
-        from app.models.inventory import Inventory, ItemStatus
+        from app.models.inventory import Inventory, ItemStatus, MetalType
+        from app.models.gold_rate import GoldRate
+        from app.models.silver_rate import SilverRate
         
         inventory_items = db.query(Inventory).filter(Inventory.status == ItemStatus.AVAILABLE).all()
         
+        latest_gold = db.query(GoldRate).order_by(GoldRate.effective_datetime.desc()).first()
+        latest_silver = db.query(SilverRate).order_by(SilverRate.effective_datetime.desc()).first()
+        
+        gold_rate = latest_gold.rate_per_gram if latest_gold else Decimal('0')
+        silver_rate = latest_silver.rate_per_gram if latest_silver else Decimal('0')
+        
         total_weight = Decimal('0')
         total_items = 0
+        total_value = Decimal('0')
         
         for item in inventory_items:
-            total_weight += Decimal(str(item.net_weight))
+            item_weight = Decimal(str(item.net_weight))
+            total_weight += item_weight
             total_items += 1
-        
-        # Note: Inventory valuation should use purchase cost, not current rates
-        # This requires storing purchase cost per inventory item
-        # For now, we return weight and count
+            if item.metal_type == MetalType.GOLD:
+                total_value += item_weight * gold_rate
+            elif item.metal_type == MetalType.SILVER:
+                total_value += item_weight * silver_rate
         
         return {
             'total_items': total_items,
             'total_weight': float(CalculationService._round_final(total_weight, CalculationService.WEIGHT_PLACES)),
-            'note': 'Inventory valuation requires purchase cost tracking per item'
+            'total_value': float(CalculationService._round_final(total_value)),
+            'note': 'Estimated inventory value using current metal rates'
         }
     
     @staticmethod
@@ -302,6 +313,7 @@ class ReportService:
             'total_customers': total_customers,
             'inventory_items': inventory_report['total_items'],
             'inventory_weight': inventory_report['total_weight'],
+            'inventory_value': inventory_report['total_value'],
             'low_stock_count': 0  # TODO: Implement low stock threshold
         }
 

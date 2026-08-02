@@ -16,7 +16,7 @@ export interface RecentActivity {
 }
 
 export const getMetrics = async (): Promise<DashboardMetrics> => {
-  const res = await axiosClient.get('/dashboard/metrics');
+  const res = await axiosClient.get(`/dashboard/metrics?t=${new Date().getTime()}`);
   return res.data;
 };
 
@@ -36,6 +36,6 @@ export interface ChartData {
 }
 
 export const getChartData = async (): Promise<ChartData> => {
-  const res = await axiosClient.get('/dashboard/chart-data');
+  const res = await axiosClient.get(`/dashboard/chart-data?t=${new Date().getTime()}`);
   return res.data;
 };
