@@ -17,7 +17,9 @@ export const generatePremiumHTML = (
     name: 'Cash Customer',
     phone: '',
     address: '',
-    email: ''
+    email: '',
+    gstin: '',
+    pan: ''
   };
   
   const invoice = data.invoice || {

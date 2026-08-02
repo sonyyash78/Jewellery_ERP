@@ -16,6 +16,9 @@ export interface InvoicePDFData {
     phone: string;
     email: string;
     address: string;
+    gstin?: string;
+    pan?: string;
+    aadhaar_pan?: string;
   };
   items: Array<{
     item_name: string;
