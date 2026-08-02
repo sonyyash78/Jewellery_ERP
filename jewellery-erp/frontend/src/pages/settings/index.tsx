@@ -61,6 +61,21 @@ export default function SettingsModule() {
     }
   };
 
+  const handleExcelBackup = async () => {
+    try {
+      const response = await axiosClient.get('/backup/excel-download', { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `jewellery_erp_backup_${new Date().toISOString().slice(0,10)}.zip`);
+      document.body.appendChild(link);
+      link.click();
+      toast.success('Database Excel backup downloaded successfully!');
+    } catch (e) {
+      toast.error('Excel Backup failed');
+    }
+  };
+
   return (
     <div className="h-[calc(100vh-6rem)] flex gap-4 overflow-hidden">
       
@@ -168,9 +183,14 @@ export default function SettingsModule() {
               <h3 className="text-lg font-bold text-white mb-2">Backup System</h3>
               <p className="text-sm text-gray-400 mb-6">Download a complete, instantaneous snapshot of your live SQLite database. Keep this file safe. It contains all your sales, inventory, and ledger history.</p>
               
-              <button onClick={handleBackup} className="bg-primary/20 text-primary border border-primary/30 hover:bg-primary hover:text-black px-6 py-3 rounded-lg font-bold transition-colors flex items-center gap-3">
-                <Download size={20} /> Download Full Backup (.sqlite)
-              </button>
+              <div className="flex gap-4">
+                <button onClick={handleBackup} className="bg-primary/20 text-primary border border-primary/30 hover:bg-primary hover:text-black px-6 py-3 rounded-lg font-bold transition-colors flex items-center gap-3">
+                  <Download size={20} /> Download Full Backup (.sqlite)
+                </button>
+                <button onClick={handleExcelBackup} className="bg-green-900/20 text-green-400 border border-green-900/30 hover:bg-green-500 hover:text-black px-6 py-3 rounded-lg font-bold transition-colors flex items-center gap-3">
+                  <Download size={20} /> Download Database Data (Excel ZIP)
+                </button>
+              </div>
             </div>
 
             <div className="p-6 border border-red-900/30 rounded-xl bg-red-900/10 mt-6">
