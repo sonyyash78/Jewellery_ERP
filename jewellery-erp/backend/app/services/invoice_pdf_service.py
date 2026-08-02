@@ -100,7 +100,9 @@ class InvoicePDFService:
             'name': f"{invoice.customer.first_name} {invoice.customer.last_name or ''}".strip() if invoice.customer else 'Walk-in Customer',
             'phone': invoice.customer.phone_number if invoice.customer else '',
             'email': invoice.customer.email if invoice.customer else '',
-            'address': ', '.join(customer_address_parts)
+            'address': ', '.join(customer_address_parts),
+            'gstin': invoice.customer.gst_number if invoice.customer else '',
+            'pan': invoice.customer.aadhaar_pan if invoice.customer else ''
         }
         
         # Items details
@@ -219,7 +221,9 @@ class InvoicePDFService:
             'name': purchase.seller.name if purchase.seller else 'Unknown Seller',
             'phone': purchase.seller.mobile if purchase.seller else '',
             'email': '',
-            'address': ', '.join(address_parts)
+            'address': ', '.join(address_parts),
+            'gstin': purchase.seller.gst_number if purchase.seller else '',
+            'pan': purchase.seller.aadhaar_pan if purchase.seller else ''
         }
         
         items_data = []

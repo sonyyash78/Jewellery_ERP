@@ -169,20 +169,20 @@ export const generatePremiumHTML = (
       .invoice-wrapper {
         border: none !important;
         margin: 0 !important;
-        height: 290mm !important;
-        max-height: 290mm !important;
+        height: 285mm !important;
+        max-height: 285mm !important;
         overflow: hidden;
       }
     }
 
     .invoice-wrapper {
       width: 210mm;
-      height: 290mm;
-      max-height: 290mm;
+      height: 285mm;
+      max-height: 285mm;
       margin: 0 auto;
       background: white;
       position: relative;
-      padding: 10mm 15mm 15mm 15mm;
+      padding: 10mm 15mm 5mm 15mm;
       box-sizing: border-box;
       overflow: hidden;
       border: 1px solid #f0f0f0; /* Just for screen preview */
@@ -216,7 +216,7 @@ export const generatePremiumHTML = (
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 15px;
+      margin-bottom: 10px;
     }
 
     .logo-section {
@@ -338,7 +338,7 @@ export const generatePremiumHTML = (
     .cards-row {
       display: flex;
       gap: 20px;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
     }
 
     .info-card {
@@ -443,7 +443,7 @@ export const generatePremiumHTML = (
       width: 100%;
       border-collapse: separate;
       border-spacing: 0;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
       border: 1px solid var(--border);
       border-radius: 8px;
       overflow: hidden;
@@ -489,7 +489,7 @@ export const generatePremiumHTML = (
       flex: 1;
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 25px;
+      padding: 15px 20px;
       background: white;
     }
 
@@ -499,8 +499,8 @@ export const generatePremiumHTML = (
       font-weight: 700;
       color: var(--gold);
       letter-spacing: 1px;
-      margin-bottom: 20px;
-      padding-bottom: 12px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
       border-bottom: 1px solid var(--border);
     }
 
@@ -510,14 +510,14 @@ export const generatePremiumHTML = (
       font-size: 12px;
       font-weight: 600;
       color: var(--navy);
-      margin-bottom: 15px;
+      margin-bottom: 10px;
     }
 
     .grand-total-box {
-      margin-top: 20px;
+      margin-top: 15px;
       background: linear-gradient(135deg, var(--gold-light), var(--gold), var(--gold-dark));
       border-radius: 8px;
-      padding: 18px 25px;
+      padding: 12px 20px;
       text-align: center;
       color: var(--navy);
       box-shadow: 0 4px 15px rgba(200, 160, 69, 0.3);
@@ -562,10 +562,10 @@ export const generatePremiumHTML = (
       flex: 1;
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 25px;
+      padding: 20px;
       display: flex;
       align-items: center;
-      gap: 25px;
+      gap: 20px;
     }
 
     .status-card.paid {
@@ -667,7 +667,7 @@ export const generatePremiumHTML = (
       font-size: 10px;
       font-weight: 700;
       color: var(--gold);
-      margin-bottom: 35px;
+      margin-bottom: 25px;
       letter-spacing: 0.5px;
     }
     
@@ -819,7 +819,7 @@ export const generatePremiumHTML = (
         </div>
         <div class="info-line" style="margin-top: 10px; font-weight: 600;">
           <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-          <span>GSTIN : -</span>
+          <span>GSTIN: ${customer.gstin || '-'}</span>
         </div>
       </div>
 
@@ -936,7 +936,7 @@ export const generatePremiumHTML = (
 
       <div class="signature-box">
         <div class="signature-title">AUTHORIZED SIGNATURE</div>
-        <div style="font-family: 'Dancing Script', cursive; font-size: 32px; font-weight: 700; color: var(--navy); margin-bottom: 10px; line-height: 1;">Saideep</div>
+        <div style="font-family: 'Dancing Script', cursive; font-size: 34px; font-weight: 700; color: var(--navy); margin-bottom: 5px; line-height: 1.5; padding: 10px 0;">Saideep</div>
         <div class="signature-line"></div>
         <div class="signature-label">FOR SAIDEEP JEWELLERS</div>
       </div>

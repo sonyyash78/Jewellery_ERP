@@ -22,7 +22,7 @@ export default function CheckoutModal({ payload, grandTotal, onClose, onSuccess 
   const [selectedCustomer, setSelectedCustomer] = useState<number | ''>(initialCustomerId || '');
   
   const [mode, setMode] = useState<'checkout' | 'new_customer'>('checkout');
-  const [newCustomer, setNewCustomer] = useState({ first_name: '', last_name: '', phone: '' });
+  const [newCustomer, setNewCustomer] = useState({ first_name: '', last_name: '', phone: '', city: '' });
 
   const balanceDue = grandTotal - amountPaid;
 
@@ -75,7 +75,8 @@ export default function CheckoutModal({ payload, grandTotal, onClose, onSuccess 
         last_name: newCustomer.last_name,
         phone_number: newCustomer.phone,
         email: null,
-        address: ''
+        address: '',
+        city: newCustomer.city
       });
       const newCustId = res.data.id;
       setCustomers([...customers, res.data]);
@@ -185,6 +186,15 @@ export default function CheckoutModal({ payload, grandTotal, onClose, onSuccess 
                   className="w-full bg-background border border-gray-700 rounded p-2 text-white outline-none focus:border-primary"
                   value={newCustomer.phone}
                   onChange={e => setNewCustomer({...newCustomer, phone: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Location / City</label>
+                <input 
+                  placeholder="Location (e.g. Mumbai)" 
+                  className="w-full bg-background border border-gray-700 rounded p-2 text-white outline-none focus:border-primary"
+                  value={newCustomer.city}
+                  onChange={e => setNewCustomer({...newCustomer, city: e.target.value})}
                 />
               </div>
               

@@ -15,6 +15,7 @@ class Customer(Base):
     state = Column(String(100))
     pincode = Column(String(20))
     aadhaar_pan = Column(String(50))
+    gst_number = Column(String(50))
     credit_limit = Column(Numeric(12, 2), default=0.0)
     outstanding_balance = Column(Numeric(12, 2), default=0.0)
     fine_gold_balance = Column(Numeric(10, 3), default=0.0)

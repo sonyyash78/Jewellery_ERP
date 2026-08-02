@@ -26,7 +26,7 @@ export default function CRM() {
   const [custMobile, setCustMobile] = useState('');
   const [custCity, setCustCity] = useState('');
   const [custPan, setCustPan] = useState('');
-  const [custAadhar, setCustAadhar] = useState('');
+  const [custGst, setCustGst] = useState('');
   const [custBalance, setCustBalance] = useState('');
 
   // Supplier Form State
@@ -69,7 +69,8 @@ export default function CRM() {
         first_name: custName,
         phone_number: custMobile,
         city: custCity,
-        aadhaar_pan: custAadhar || custPan,
+        aadhaar_pan: custPan,
+        gst_number: custGst,
         outstanding_balance: Number(custBalance) || 0
       };
       if (editingId) {
@@ -160,7 +161,7 @@ export default function CRM() {
           onClick={() => {
             setEditingId(null);
             if (tab === 'customers') {
-              setCustName(''); setCustMobile(''); setCustCity(''); setCustPan(''); setCustAadhar(''); setCustBalance('');
+              setCustName(''); setCustMobile(''); setCustCity(''); setCustPan(''); setCustGst(''); setCustBalance('');
               setShowAddCustomer(true);
             } else {
               setSuppName(''); setSuppMobile(''); setSuppCity(''); setSuppGst(''); setSuppBalance('');
@@ -226,7 +227,12 @@ export default function CRM() {
                   <td className="py-3 px-4 font-bold text-textMain">{tab === 'customers' ? `${person.first_name} ${person.last_name || ''}` : person.name}</td>
                   <td className="py-3 px-4">{person.phone_number || person.mobile}</td>
                   <td className="py-3 px-4">{person.city || '—'}</td>
-                  <td className="py-3 px-4">{person.gst_number || person.aadhaar_pan || 'N/A'}</td>
+                  <td className="py-3 px-4">
+                    {person.gst_number && person.aadhaar_pan 
+                      ? `GST: ${person.gst_number} / PAN: ${person.aadhaar_pan}`
+                      : person.gst_number ? `GST: ${person.gst_number}` : person.aadhaar_pan ? `PAN: ${person.aadhaar_pan}` : 'N/A'
+                    }
+                  </td>
                   <td className="py-3 px-4 font-mono">
                     {tab === 'customers' ? (person.credit_limit ? `₹ ${person.credit_limit.toLocaleString()}` : 'None') : (person.is_active ? 'Active' : 'Inactive')}
                   </td>
@@ -240,6 +246,8 @@ export default function CRM() {
                           setCustMobile(person.phone_number);
                           setCustCity(person.city || '');
                           setCustBalance(person.outstanding_balance?.toString() || '0');
+                          setCustPan(person.aadhaar_pan || '');
+                          setCustGst(person.gst_number || '');
                           setShowAddCustomer(true);
                         } else {
                           setSuppName(person.name);
@@ -313,12 +321,12 @@ export default function CRM() {
                 <input id="cust-city" value={custCity} onChange={e => setCustCity(e.target.value)} className="w-full bg-background border border-gray-700 rounded px-3 py-2 text-textMain" />
               </div>
               <div>
-                <label htmlFor="cust-pan" className="block text-sm text-textMuted">PAN Number</label>
-                <input id="cust-pan" value={custPan} onChange={e => setCustPan(e.target.value)} className="w-full bg-background border border-gray-700 rounded px-3 py-2 text-textMain" />
+                <label htmlFor="cust-gst" className="block text-sm text-textMuted">GST Number</label>
+                <input id="cust-gst" value={custGst} onChange={e => setCustGst(e.target.value)} className="w-full bg-background border border-gray-700 rounded px-3 py-2 text-textMain" />
               </div>
               <div>
-                <label htmlFor="cust-aadhar" className="block text-sm text-textMuted">Aadhar Number</label>
-                <input id="cust-aadhar" value={custAadhar} onChange={e => setCustAadhar(e.target.value)} className="w-full bg-background border border-gray-700 rounded px-3 py-2 text-textMain" />
+                <label htmlFor="cust-pan" className="block text-sm text-textMuted">PAN Number</label>
+                <input id="cust-pan" value={custPan} onChange={e => setCustPan(e.target.value)} className="w-full bg-background border border-gray-700 rounded px-3 py-2 text-textMain" />
               </div>
               <div>
                 <label htmlFor="cust-balance" className="block text-sm text-textMuted">Opening Balance</label>

@@ -14,6 +14,7 @@ class CustomerBase(BaseModel):
     state: Optional[str] = None
     pincode: Optional[str] = None
     aadhaar_pan: Optional[str] = None
+    gst_number: Optional[str] = None
     credit_limit: Decimal = Decimal('0.00')
     outstanding_balance: Decimal = Decimal('0.00')
     is_active: bool = True
@@ -31,6 +32,7 @@ class CustomerUpdate(BaseModel):
     state: Optional[str] = None
     pincode: Optional[str] = None
     aadhaar_pan: Optional[str] = None
+    gst_number: Optional[str] = None
     credit_limit: Optional[Decimal] = None
     outstanding_balance: Optional[Decimal] = None
     is_active: Optional[bool] = None
