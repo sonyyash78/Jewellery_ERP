@@ -23,6 +23,7 @@ export const generatePremiumHTML = (data: any, qrDataUrl?: string) => {
   
   const taxableAmount = data.totals?.subtotal || 0;
   const taxAmount = data.totals?.tax_amount || 0;
+  const discountAmount = data.totals?.discount_amount || 0;
   const grandTotal = data.totals?.grand_total || 0;
   const amountPaid = data.invoice?.amount_paid || 0;
   const balanceDue = data.invoice?.balance_due || 0;
@@ -462,7 +463,7 @@ export const generatePremiumHTML = (data: any, qrDataUrl?: string) => {
       font-size: 32px;
       color: #444;
       line-height: 1;
-      margin-bottom: -5px;
+      margin-bottom: 5px;
     }
     .sig-line {
       width: 150px;
@@ -534,9 +535,8 @@ export const generatePremiumHTML = (data: any, qrDataUrl?: string) => {
     <!-- HEADER -->
     <div class="header-container">
       <div class="logo-area">
-        <div class="logo-icon"><span>S</span></div>
+        <img src="http://localhost:8000/static/logo.png" style="max-width: 80px; max-height: 80px; object-fit: contain; margin-bottom: 15px;" onerror="this.style.display='none'" alt="Logo" />
         <div class="brand-title">${companyName}</div>
-        <div class="brand-subtitle">JEWELLERS</div><br>
         <div class="brand-tagline">${companyTagline}</div>
       </div>
       
@@ -660,6 +660,12 @@ export const generatePremiumHTML = (data: any, qrDataUrl?: string) => {
           <span>GST (3.00%)</span>
           <span>&#8377; ${taxAmount.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
         </div>
+        ${discountAmount > 0 ? `
+        <div class="totals-row" style="color: #d9534f;">
+          <span>${isExchange ? 'Less: Old Items Value' : 'Discount'}</span>
+          <span>- &#8377; ${discountAmount.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+        </div>
+        ` : ''}
         <div class="grand-total-row">
           <span>GRAND TOTAL</span>
           <span>&#8377; ${grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
