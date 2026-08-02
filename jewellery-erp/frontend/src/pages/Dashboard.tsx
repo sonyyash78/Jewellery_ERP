@@ -42,7 +42,15 @@ export default function Dashboard() {
     const intervalId = setInterval(() => {
       fetchDashboardData(true); // silent background fetch, but shows tiny spinner
     }, 30000);
-    return () => clearInterval(intervalId);
+    
+    // Auto-refresh when window regains focus (real-time across tabs)
+    const onFocus = () => fetchDashboardData(true);
+    window.addEventListener('focus', onFocus);
+    
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('focus', onFocus);
+    };
   }, []);
 
   const formatCurrency = (val: number) => `₹ ${val.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;

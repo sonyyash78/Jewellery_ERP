@@ -54,6 +54,7 @@ export default function LiveBillSummary() {
       discount_amount: globalDiscount,
       grand_total: grandTotal,
       items: cart.map(item => ({
+        stock_item_id: item.stockItemId || null,
         item_name: item.itemName,
         item_type: item.itemType,
         final_price: item.taxableAmount,

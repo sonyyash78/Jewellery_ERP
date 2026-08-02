@@ -91,6 +91,11 @@ export default function Inventory() {
 
   useEffect(() => {
     fetchItems();
+    
+    // Auto-refresh when window regains focus (real-time across tabs)
+    const onFocus = () => fetchItems();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
   }, [searchQuery, metalFilter]);
 
   const handleDelete = async (id: number) => {

@@ -5,10 +5,10 @@ export default function QuickShortcuts() {
   const shortcuts = [
     { name: 'New Bill', icon: <Receipt size={24} />, path: '/billing', color: 'bg-green-500/10 text-green-500' },
     { name: 'Add Customer', icon: <Users size={24} />, path: '/customers', color: 'bg-blue-500/10 text-blue-500' },
-    { name: 'Add Product', icon: <Package size={24} />, path: '/products', color: 'bg-purple-500/10 text-purple-500' },
-    { name: 'New Expense', icon: <FileText size={24} />, path: '/', color: 'bg-orange-500/10 text-orange-500' },
-    { name: 'Inventory In', icon: <PlusCircle size={24} />, path: '/', color: 'bg-primary/10 text-primary' },
-    { name: 'Reports', icon: <FileSpreadsheet size={24} />, path: '/', color: 'bg-teal-500/10 text-teal-500' },
+    { name: 'Add Inventory', icon: <Package size={24} />, path: '/inventory', color: 'bg-purple-500/10 text-purple-500' },
+    { name: 'New Purchase', icon: <FileText size={24} />, path: '/purchases', color: 'bg-orange-500/10 text-orange-500' },
+    { name: 'Exchange', icon: <PlusCircle size={24} />, path: '/exchange', color: 'bg-primary/10 text-primary' },
+    { name: 'Reports', icon: <FileSpreadsheet size={24} />, path: '/reports', color: 'bg-teal-500/10 text-teal-500' },
   ];
 
   return (

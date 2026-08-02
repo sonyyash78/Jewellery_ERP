@@ -53,53 +53,24 @@ def create_unified_purchase(
     else:
         raise HTTPException(status_code=400, detail="Seller information is required")
     
-    # Recalculate all totals from items using CalculationService
-    purchase_taxable = Decimal('0')
-    purchase_cgst = Decimal('0')
-    purchase_sgst = Decimal('0')
-    purchase_igst = Decimal('0')
-    
-    # Determine state for GST
-    is_same_state = True  # TODO: Get from settings or seller
-    gst_rate = Decimal('3')  # Default GST for jewellery
-    
     # Create purchase record first
     db_purchase = Purchase(
         purchase_number=f"PUR-{int(datetime.now().timestamp() * 1000) % 1000000}",
         seller_id=seller.id,
         created_by_id=current_user.id,
-        total_taxable=0,  # Will update after items
-        cgst=0,
-        sgst=0,
-        igst=0,
-        grand_total=0,
+        total_taxable=purchase_in.total_taxable,
+        cgst=purchase_in.cgst,
+        sgst=purchase_in.sgst,
+        igst=purchase_in.igst,
+        grand_total=purchase_in.grand_total,
         status=PurchaseStatus[purchase_in.status] if purchase_in.status in ['COMPLETED', 'DRAFT', 'CANCELLED'] else PurchaseStatus.COMPLETED
     )
     db.add(db_purchase)
     db.flush()
     
-    # Process each item and recalculate
+    # Process each item
     for item_in in purchase_in.items:
-        # Use the metal rate provided by the frontend (negotiated rate)
-        metal_rate = Decimal(str(item_in.metal_rate))
-        
-        # Use CalculationService for purchase calculation
-        calc_result = CalculationService.calculate_purchase(
-            gross_weight=Decimal(str(item_in.gross_weight)),
-            stone_weight=Decimal(str(item_in.stone_weight)),
-            purity=Decimal(str(item_in.touch_purity)),
-            metal_rate=metal_rate,
-            labour=Decimal(str(item_in.labour_charge)),
-            making=Decimal('0'),
-            hallmark=Decimal(str(item_in.hallmark_charge)),
-            testing=Decimal(str(item_in.testing_melting_charge)),
-            other=Decimal(str(item_in.other_charges)),
-            discount=Decimal(str(item_in.discount)),
-            gst_rate=gst_rate,
-            is_same_state=is_same_state
-        )
-        
-        # Create item with calculated values
+        # Create item with values from frontend
         db_item = PurchaseItem(
             purchase_id=db_purchase.id,
             metal_type=item_in.metal_type,
@@ -107,37 +78,23 @@ def create_unified_purchase(
             category=item_in.category,
             gross_weight=item_in.gross_weight,
             stone_weight=item_in.stone_weight,
-            net_weight=float(calc_result['net_weight']),
+            net_weight=item_in.net_weight,
             touch_purity=item_in.touch_purity,
             wastage=item_in.wastage,
-            fine_weight=float(calc_result['fine_weight']),
-            metal_rate=float(metal_rate),
-            metal_value=float(calc_result['metal_value']),
+            fine_weight=item_in.fine_weight,
+            metal_rate=item_in.metal_rate,
+            metal_value=item_in.metal_value,
             labour_charge=item_in.labour_charge,
             testing_melting_charge=item_in.testing_melting_charge,
             hallmark_charge=item_in.hallmark_charge,
             other_charges=item_in.other_charges,
             discount=item_in.discount,
-            taxable_amount=float(calc_result['taxable'])
+            taxable_amount=item_in.taxable_amount
         )
         db.add(db_item)
-        
-        # Accumulate totals
-        purchase_taxable += calc_result['taxable']
-        purchase_cgst += calc_result['cgst']
-        purchase_sgst += calc_result['sgst']
-        purchase_igst += calc_result['igst']
-    
-    # Update purchase totals
-    purchase_grand_total = purchase_taxable + purchase_cgst + purchase_sgst + purchase_igst
-    db_purchase.total_taxable = float(purchase_taxable)
-    db_purchase.cgst = float(purchase_cgst)
-    db_purchase.sgst = float(purchase_sgst)
-    db_purchase.igst = float(purchase_igst)
-    db_purchase.grand_total = float(purchase_grand_total)
     
     # Update seller outstanding balance (We owe them)
-    seller.outstanding_balance = float(seller.outstanding_balance or 0) + float(purchase_grand_total)
+    seller.outstanding_balance = float(seller.outstanding_balance or 0) + float(purchase_in.grand_total)
     
     # Create supplier ledger entry for the purchase
     from app.models.supplier_ledger import SupplierLedger
@@ -147,7 +104,7 @@ def create_unified_purchase(
         voucher_number=db_purchase.purchase_number,
         description=f"Purchase {db_purchase.purchase_number}",
         debit=0,
-        credit=float(purchase_grand_total),
+        credit=float(purchase_in.grand_total),
         balance=seller.outstanding_balance
     )
     db.add(ledger_entry)
