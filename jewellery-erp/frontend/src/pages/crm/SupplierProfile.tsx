@@ -33,7 +33,7 @@ export default function SupplierProfile({ id, onBack }: { id: number, onBack: ()
   const handleDownloadPDF = async (row: any) => {
     if (row.bill_no && row.bill_no !== '-') {
       try {
-        const res = await axiosClient.get(`/invoices/pdf-by-voucher/${row.bill_no}`);
+        const res = await axiosClient.get(`/purchases/pdf-by-voucher/${row.bill_no}`);
         await generateInvoicePDF(res.data);
       } catch (e: any) {
         toast.error('Failed to download PDF');

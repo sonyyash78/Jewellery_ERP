@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getMetrics, getChartData } from '../api/dashboardApi';
+import { getMetrics, getChartData, getRecentActivity } from '../api/dashboardApi';
 import type { DashboardMetrics, ChartData } from '../api/dashboardApi';
 import StatCard from '../components/dashboard/StatCard';
 import MetalRatesWidget from '../components/dashboard/MetalRatesWidget';
@@ -13,6 +13,7 @@ import toast from 'react-hot-toast';
 export default function Dashboard() {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [chartData, setChartData] = useState<ChartData | null>(null);
+  const [recentData, setRecentData] = useState<{recent_bills: any[], recent_purchases: any[]} | null>(null);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
@@ -20,12 +21,14 @@ export default function Dashboard() {
   const fetchDashboardData = async (showRefreshIndicator = false) => {
     if (showRefreshIndicator) setIsRefreshing(true);
     try {
-      const [metricsData, chartsData] = await Promise.all([
+      const [metricsData, chartsData, activityData] = await Promise.all([
         getMetrics(),
-        getChartData()
+        getChartData(),
+        getRecentActivity()
       ]);
       setMetrics(metricsData);
       setChartData(chartsData);
+      setRecentData(activityData);
       setLastUpdated(new Date());
     } catch (err) {
       console.error(err);
@@ -146,7 +149,7 @@ export default function Dashboard() {
       </div>
 
       {/* Tables Row */}
-      <RecentTables />
+      {recentData && <RecentTables data={recentData} />}
     </div>
   );
 }

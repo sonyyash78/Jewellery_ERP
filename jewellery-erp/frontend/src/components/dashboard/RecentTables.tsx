@@ -1,18 +1,5 @@
-import { useState, useEffect } from 'react';
-import { getRecentActivity } from '../../api/dashboardApi';
-
-export default function RecentTables() {
-  const [data, setData] = useState<{recent_bills: any[], recent_purchases: any[]}>({ recent_bills: [], recent_purchases: [] });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    getRecentActivity().then(res => {
-      setData(res);
-      setLoading(false);
-    }).catch(() => setLoading(false));
-  }, []);
-
-  if (loading) return <div className="h-64 bg-surface animate-pulse rounded-xl border border-gray-800"></div>;
+export default function RecentTables({ data }: { data: { recent_bills: any[], recent_purchases: any[] } }) {
+  if (!data) return <div className="h-64 bg-surface animate-pulse rounded-xl border border-gray-800"></div>;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

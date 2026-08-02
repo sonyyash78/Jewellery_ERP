@@ -302,7 +302,7 @@ export default function InvoiceHistory() {
                     <td className="p-4 text-sm text-textMain">{invoice.customer ? `${invoice.customer.first_name} ${invoice.customer.last_name || ''}`.trim() : 'Walk-in'}</td>
                     <td className="p-4 text-sm text-textMuted">{invoice.customer?.phone_number || '-'}</td>
                     <td className="p-4 text-sm font-semibold text-right text-textMain">
-                      Rs. {invoice.grand_total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      Rs. {Number(invoice.grand_total).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </td>
                     <td className="p-4">
                       <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getStatusBadge(invoice.status)}`}>
@@ -448,12 +448,12 @@ export default function InvoiceHistory() {
                   {selectedInvoice.discount_amount > 0 && (
                     <div className="flex justify-between text-sm">
                       <span className="text-textMuted">Discount</span>
-                      <span className="text-textMain">- Rs. {selectedInvoice.discount_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                      <span className="text-textMain">- Rs. {Number(selectedInvoice.discount_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                     </div>
                   )}
-                  <div className="flex justify-between text-lg font-bold pt-2 border-t border-gray-800">
-                    <span className="text-textMain">Grand Total</span>
-                    <span className="text-primary">Rs. {selectedInvoice.grand_total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                  <div className="flex justify-between font-bold text-lg mt-4 pt-4 border-t border-gray-800">
+                    <span>Grand Total</span>
+                    <span className="text-primary">Rs. {Number(selectedInvoice.grand_total).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   </div>
                 </div>
               </div>

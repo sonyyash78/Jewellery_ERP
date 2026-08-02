@@ -125,7 +125,7 @@ def list_exchanges(
             "id": e.id,
             "invoice_number": f"EXC-{e.id}",
             "invoice_date": e.exchange_date,
-            "grand_total": e.difference_amount,
+            "grand_total": e.total_new_value if e.total_new_value > 0 else e.total_old_value,
             "status": "Completed",
             "has_new_items": e.total_new_value > 0,
             "has_old_items": e.total_old_value > 0,

@@ -181,6 +181,23 @@ def get_purchase_pdf_data(
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
+@router.get("/pdf-by-voucher/{voucher_number}")
+def get_purchase_pdf_data_by_voucher(
+    voucher_number: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get purchase data formatted for PDF generation using voucher number."""
+    purchase = db.query(Purchase).filter(Purchase.purchase_number == voucher_number).first()
+    if not purchase:
+        raise HTTPException(status_code=404, detail="Purchase not found")
+        
+    try:
+        from app.services.invoice_pdf_service import InvoicePDFService
+        return InvoicePDFService.get_purchase_pdf_data(purchase.id, db)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
 @router.get("/{id}")
 def get_unified_purchase(
     id: int,
