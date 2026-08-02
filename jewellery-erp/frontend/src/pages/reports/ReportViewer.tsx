@@ -133,7 +133,16 @@ export default function ReportViewer({ reportType }: { reportType: string }) {
           <div key={key} className="bg-surface border border-gray-800 rounded-xl p-6 shadow-lg flex flex-col justify-center">
             <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{key.replace(/_/g, ' ')}</div>
             <div className="text-3xl font-bold font-mono text-textMain">
-              {typeof value === 'number' && !key.includes('count') && !key.includes('margin') ? 
+              {typeof value === 'object' && value !== null ? (
+                <div className="flex flex-col gap-1 mt-2">
+                  {Object.entries(value).map(([k, v]) => (
+                    <div key={k} className="text-sm font-normal flex justify-between border-b border-gray-800 pb-1">
+                      <span className="text-gray-400 capitalize">{k}</span>
+                      <span>₹ {Number(v).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : typeof value === 'number' && !key.includes('count') && !key.includes('margin') && !key.includes('weight') && key !== 'total' && key !== 'total_items' ? 
                 `₹ ${value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 
                 String(value)}
             </div>

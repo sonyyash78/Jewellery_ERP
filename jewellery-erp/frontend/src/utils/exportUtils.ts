@@ -118,7 +118,8 @@ export const exportReportToPDF = (
           key.includes('taxable') ||
           key.includes('payable') ||
           key.includes('receivable') ||
-          key.includes('cogs')
+          key.includes('cogs') ||
+          key.includes('cost')
         ) {
           formattedValue = `₹ ${value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         } else if (key.includes('weight')) {

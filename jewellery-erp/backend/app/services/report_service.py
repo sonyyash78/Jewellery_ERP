@@ -229,7 +229,7 @@ class ReportService:
         
         return {
             'sales': float(CalculationService._round_final(sales_taxable)),
-            'cogs': float(CalculationService._round_final(cogs)),
+            'total_cost': float(CalculationService._round_final(cogs)),
             'gross_profit': float(gross_profit_result['gross_profit']),
             'expenses': float(CalculationService._round_final(total_expenses)),
             'net_profit': float(net_profit_result['net_profit']),
@@ -247,11 +247,11 @@ class ReportService:
         """
         # For now, we'll use a simplified approach
         # In production, you'd track purchase cost per item in inventory
-        from app.models.inventory import Inventory, ItemStatus, MetalType
+        from app.models.stock_item import StockItem
         from app.models.gold_rate import GoldRate
         from app.models.silver_rate import SilverRate
         
-        inventory_items = db.query(Inventory).filter(Inventory.status == ItemStatus.AVAILABLE).all()
+        inventory_items = db.query(StockItem).filter(StockItem.status.ilike("available")).all()
         
         latest_gold = db.query(GoldRate).order_by(GoldRate.effective_datetime.desc()).first()
         latest_silver = db.query(SilverRate).order_by(SilverRate.effective_datetime.desc()).first()
@@ -267,9 +267,9 @@ class ReportService:
             item_weight = Decimal(str(item.net_weight))
             total_weight += item_weight
             total_items += 1
-            if item.metal_type == MetalType.GOLD:
+            if item.metal and item.metal.lower() == 'gold':
                 total_value += item_weight * gold_rate
-            elif item.metal_type == MetalType.SILVER:
+            elif item.metal and item.metal.lower() == 'silver':
                 total_value += item_weight * silver_rate
         
         return {

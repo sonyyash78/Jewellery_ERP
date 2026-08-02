@@ -11,7 +11,7 @@ from app.schemas.stock import StockItemCreate, StockItemUpdate, StockItemRespons
 
 router = APIRouter()
 
-QR_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'static', 'qrcodes')
+QR_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), 'static', 'qrcodes')
 os.makedirs(QR_DIR, exist_ok=True)
 
 @router.post("/", response_model=StockItemResponse)
