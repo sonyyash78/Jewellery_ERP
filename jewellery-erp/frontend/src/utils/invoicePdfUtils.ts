@@ -79,7 +79,22 @@ export const generateInvoicePDF = async (data: InvoicePDFData) => {
       console.warn('Failed to generate QR code data URL', e);
     }
 
-    const htmlStr = generatePremiumHTML(data, qrDataUrl);
+    let logoDataUrl = '';
+    try {
+      const response = await fetch('http://localhost:8000/static/logo.png');
+      if (response.ok) {
+        const blob = await response.blob();
+        logoDataUrl = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+      }
+    } catch (e) {
+      console.warn('Failed to fetch logo for PDF', e);
+    }
+
+    const htmlStr = generatePremiumHTML(data, qrDataUrl, logoDataUrl);
     
     // Create an invisible container to ensure fonts load and CSS is applied
     const container = document.createElement('div');

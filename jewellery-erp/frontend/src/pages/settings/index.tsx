@@ -130,9 +130,13 @@ export default function SettingsModule() {
                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email Address</label>
                   <input value={settings['email'] || ''} onChange={e=>setSettings({...settings, email: e.target.value})} type="email" className="w-full bg-background border border-gray-700 rounded p-3 text-sm text-textMain focus:border-primary outline-none" />
                 </div>
-                <div className="md:col-span-2">
+                <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">GSTIN Number</label>
                   <input value={settings['gstin'] || ''} onChange={e=>setSettings({...settings, gstin: e.target.value})} className="w-full bg-background border border-gray-700 rounded p-3 text-sm text-textMain focus:border-primary outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">PAN Number</label>
+                  <input value={settings['pan'] || ''} onChange={e=>setSettings({...settings, pan: e.target.value})} className="w-full bg-background border border-gray-700 rounded p-3 text-sm text-textMain focus:border-primary outline-none" />
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Address</label>

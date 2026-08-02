@@ -35,6 +35,7 @@ class InvoicePDFService:
             'phone': settings_dict.get('phone') or InvoicePDFService.COMPANY_PHONE,
             'email': settings_dict.get('email') or InvoicePDFService.COMPANY_EMAIL,
             'gstin': settings_dict.get('gstin') or InvoicePDFService.COMPANY_GSTIN,
+            'pan': settings_dict.get('pan') or "",
             'tagline': settings_dict.get('tagline') or "Trust. Purity. Elegance."
         }
 

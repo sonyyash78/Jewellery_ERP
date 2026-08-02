@@ -1,4 +1,4 @@
-export const generatePremiumHTML = (data: any, qrDataUrl?: string) => {
+export const generatePremiumHTML = (data: any, qrDataUrl?: string, logoDataUrl?: string) => {
   const isExchange = data.type === 'exchange';
   const isPurchase = data.type === 'purchase';
   const title = isExchange ? 'EXCHANGE INVOICE' : isPurchase ? 'PURCHASE RECEIPT' : 'TAX INVOICE';
@@ -16,6 +16,7 @@ export const generatePremiumHTML = (data: any, qrDataUrl?: string) => {
   const companyPhone = data.company?.phone || '+91 85048 37854';
   const companyEmail = data.company?.email || 'saideepjewellers@gmail.com';
   const gstin = data.company?.gstin || '08ABCDE1234F1Z5';
+  const pan = data.company?.pan || gstin.substring(2, 12) || '';
   const companyTagline = data.company?.tagline || 'Trust. Purity. Elegance.';
   
   const customerName = data.customer?.name || '';
@@ -28,11 +29,6 @@ export const generatePremiumHTML = (data: any, qrDataUrl?: string) => {
   const amountPaid = data.invoice?.amount_paid || 0;
   const balanceDue = data.invoice?.balance_due || 0;
   
-  // Calculate valid till (14 days from now)
-  const validTill = new Date(dateObj);
-  validTill.setDate(validTill.getDate() + 14);
-  const formattedValidTill = validTill.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
-
   // Render items safely
   let itemsHtml = '';
   if (data.items && data.items.length > 0) {
@@ -535,7 +531,7 @@ export const generatePremiumHTML = (data: any, qrDataUrl?: string) => {
     <!-- HEADER -->
     <div class="header-container">
       <div class="logo-area">
-        <img src="http://localhost:8000/static/logo.png" style="max-width: 80px; max-height: 80px; object-fit: contain; margin-bottom: 15px;" onerror="this.style.display='none'" alt="Logo" />
+        <img src="${logoDataUrl || 'http://localhost:8000/static/logo.png'}" style="display: block; margin: 0 auto 15px auto; max-width: 80px; max-height: 80px; object-fit: contain;" onerror="this.style.display='none'" alt="Logo" />
         <div class="brand-title">${companyName}</div>
         <div class="brand-tagline">${companyTagline}</div>
       </div>
@@ -588,14 +584,12 @@ export const generatePremiumHTML = (data: any, qrDataUrl?: string) => {
             <td>GSTIN</td>
             <td>: ${gstin}</td>
           </tr>
+          ${pan ? `
           <tr>
             <td>PAN</td>
-            <td>: ${gstin.substring(2, 12) || 'ABCDE1234F'}</td>
+            <td>: ${pan}</td>
           </tr>
-          <tr>
-            <td>IEC</td>
-            <td>: ${gstin.substring(2, 12) || 'ABCDE1234F'}</td>
-          </tr>
+          ` : ''}
         </table>
         <div class="qr-box">
           ${qrDataUrl 
@@ -623,8 +617,8 @@ export const generatePremiumHTML = (data: any, qrDataUrl?: string) => {
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
         </div>
         <div class="info-content">
-          <h4>ESTIMATE VALID TILL:</h4>
-          <p>${formattedValidTill}</p>
+          <h4>PAYMENT MODE:</h4>
+          <p>Cash / UPI / Card</p>
         </div>
       </div>
     </div>
