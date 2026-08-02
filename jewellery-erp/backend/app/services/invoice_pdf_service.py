@@ -88,12 +88,19 @@ class InvoicePDFService:
         invoice_data['amount_paid'] = amount_paid
         invoice_data['balance_due'] = invoice_data['grand_total'] - amount_paid
         
+        customer_address_parts = []
+        if invoice.customer:
+            if invoice.customer.address:
+                customer_address_parts.append(invoice.customer.address)
+            if invoice.customer.city:
+                customer_address_parts.append(invoice.customer.city)
+                
         # Customer details
         customer_data = {
             'name': f"{invoice.customer.first_name} {invoice.customer.last_name or ''}".strip() if invoice.customer else 'Walk-in Customer',
             'phone': invoice.customer.phone_number if invoice.customer else '',
             'email': invoice.customer.email if invoice.customer else '',
-            'address': invoice.customer.address if invoice.customer else ''
+            'address': ', '.join(customer_address_parts)
         }
         
         # Items details
@@ -201,12 +208,18 @@ class InvoicePDFService:
         invoice_data['amount_paid'] = amount_paid
         invoice_data['balance_due'] = invoice_data['grand_total'] - amount_paid
 
-        
+        address_parts = []
+        if purchase.seller:
+            if purchase.seller.address:
+                address_parts.append(purchase.seller.address)
+            if purchase.seller.city:
+                address_parts.append(purchase.seller.city)
+                
         customer_data = {
             'name': purchase.seller.name if purchase.seller else 'Unknown Seller',
             'phone': purchase.seller.mobile if purchase.seller else '',
             'email': '',
-            'address': purchase.seller.address if purchase.seller else ''
+            'address': ', '.join(address_parts)
         }
         
         items_data = []

@@ -126,7 +126,7 @@ export const generatePremiumHTML = (
   <meta charset="utf-8">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
   <style>
     :root {
       --navy: #0B132B;
@@ -936,10 +936,7 @@ export const generatePremiumHTML = (
 
       <div class="signature-box">
         <div class="signature-title">AUTHORIZED SIGNATURE</div>
-        <svg class="signature-img" style="opacity: 0.6;" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
-          <!-- A stylized Saideep signature -->
-          <path d="M 40,40 C 20,40 20,10 40,20 C 60,30 50,50 70,40 C 80,35 75,25 90,30 C 100,35 105,25 115,35 C 125,45 120,20 135,25 C 145,30 140,50 160,35 C 170,30 180,30 190,35" stroke="var(--navy)" stroke-width="2" fill="none" stroke-linecap="round"/>
-        </svg>
+        <div style="font-family: 'Dancing Script', cursive; font-size: 32px; font-weight: 700; color: var(--navy); margin-bottom: 10px; line-height: 1;">Saideep</div>
         <div class="signature-line"></div>
         <div class="signature-label">FOR SAIDEEP JEWELLERS</div>
       </div>
