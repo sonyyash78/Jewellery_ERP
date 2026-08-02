@@ -113,19 +113,33 @@ export default function SettingsModule() {
             </div>
 
             <form onSubmit={handleSaveSettings} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Business Name</label>
-                <input value={settings['business_name'] || ''} onChange={e=>setSettings({...settings, business_name: e.target.value})} className="w-full bg-background border border-gray-700 rounded p-3 text-sm text-textMain focus:border-primary outline-none" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Business Name</label>
+                  <input value={settings['business_name'] || ''} onChange={e=>setSettings({...settings, business_name: e.target.value})} className="w-full bg-background border border-gray-700 rounded p-3 text-sm text-textMain focus:border-primary outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Tagline (Subtitle)</label>
+                  <input value={settings['tagline'] || ''} placeholder="e.g. Trust. Purity. Elegance." onChange={e=>setSettings({...settings, tagline: e.target.value})} className="w-full bg-background border border-gray-700 rounded p-3 text-sm text-textMain focus:border-primary outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Phone Number</label>
+                  <input value={settings['phone'] || ''} onChange={e=>setSettings({...settings, phone: e.target.value})} className="w-full bg-background border border-gray-700 rounded p-3 text-sm text-textMain focus:border-primary outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email Address</label>
+                  <input value={settings['email'] || ''} onChange={e=>setSettings({...settings, email: e.target.value})} type="email" className="w-full bg-background border border-gray-700 rounded p-3 text-sm text-textMain focus:border-primary outline-none" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">GSTIN Number</label>
+                  <input value={settings['gstin'] || ''} onChange={e=>setSettings({...settings, gstin: e.target.value})} className="w-full bg-background border border-gray-700 rounded p-3 text-sm text-textMain focus:border-primary outline-none" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Address</label>
+                  <textarea value={settings['address'] || ''} onChange={e=>setSettings({...settings, address: e.target.value})} rows={3} className="w-full bg-background border border-gray-700 rounded p-3 text-sm text-textMain focus:border-primary outline-none resize-none" />
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">GSTIN Number</label>
-                <input value={settings['gstin'] || ''} onChange={e=>setSettings({...settings, gstin: e.target.value})} className="w-full bg-background border border-gray-700 rounded p-3 text-sm text-textMain focus:border-primary outline-none" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Address</label>
-                <textarea value={settings['address'] || ''} onChange={e=>setSettings({...settings, address: e.target.value})} rows={3} className="w-full bg-background border border-gray-700 rounded p-3 text-sm text-textMain focus:border-primary outline-none resize-none" />
-              </div>
-              <div className="pt-4 border-t border-gray-800">
+              <div className="pt-4 border-t border-gray-800 mt-4">
                 <button type="submit" className="bg-primary hover:bg-primary-dark text-black px-6 py-3 rounded font-bold text-sm transition-colors flex items-center gap-2"><Save size={18} /> Save Settings</button>
               </div>
             </form>

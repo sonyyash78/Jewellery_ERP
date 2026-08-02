@@ -113,7 +113,7 @@ export const generateInvoicePDF = async (data: InvoicePDFData) => {
     
     // Use the inner wrapper for exact dimensions
     const targetElement = container.querySelector('.invoice-wrapper') || container;
-    await html2pdf().set(opt).from(targetElement).save();
+    await html2pdf().set(opt).from(targetElement as HTMLElement).save();
     
     // Cleanup
     document.body.removeChild(container);

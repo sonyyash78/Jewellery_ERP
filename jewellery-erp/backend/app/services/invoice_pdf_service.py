@@ -13,6 +13,7 @@ from app.models.purchase import Purchase
 from app.models.exchange import Exchange
 from app.models.supplier_ledger import SupplierLedger
 from app.services.calculation_service import CalculationService
+from app.models.setting import Setting
 
 
 class InvoicePDFService:
@@ -24,6 +25,19 @@ class InvoicePDFService:
     COMPANY_EMAIL = ""
     COMPANY_GSTIN = ""
     
+    @staticmethod
+    def _get_company_details(db: Session) -> Dict[str, str]:
+        settings = db.query(Setting).all()
+        settings_dict = {s.key: s.value for s in settings}
+        return {
+            'name': settings_dict.get('business_name') or InvoicePDFService.COMPANY_NAME,
+            'address': settings_dict.get('address') or InvoicePDFService.COMPANY_ADDRESS,
+            'phone': settings_dict.get('phone') or InvoicePDFService.COMPANY_PHONE,
+            'email': settings_dict.get('email') or InvoicePDFService.COMPANY_EMAIL,
+            'gstin': settings_dict.get('gstin') or InvoicePDFService.COMPANY_GSTIN,
+            'tagline': settings_dict.get('tagline') or "Trust. Purity. Elegance."
+        }
+
     @staticmethod
     def get_invoice_pdf_data(invoice_id: int, db: Session) -> Dict[str, Any]:
         """
@@ -44,13 +58,7 @@ class InvoicePDFService:
             raise ValueError(f"Invoice {invoice_id} not found")
         
         # Company details
-        company = {
-            'name': InvoicePDFService.COMPANY_NAME,
-            'address': InvoicePDFService.COMPANY_ADDRESS,
-            'phone': InvoicePDFService.COMPANY_PHONE,
-            'email': InvoicePDFService.COMPANY_EMAIL,
-            'gstin': InvoicePDFService.COMPANY_GSTIN
-        }
+        company = InvoicePDFService._get_company_details(db)
         
         # Invoice details
         invoice_data = {
@@ -172,13 +180,7 @@ class InvoicePDFService:
         if not purchase:
             raise ValueError(f"Purchase {purchase_id} not found")
         
-        company = {
-            'name': InvoicePDFService.COMPANY_NAME,
-            'address': InvoicePDFService.COMPANY_ADDRESS,
-            'phone': InvoicePDFService.COMPANY_PHONE,
-            'email': InvoicePDFService.COMPANY_EMAIL,
-            'gstin': InvoicePDFService.COMPANY_GSTIN
-        }
+        company = InvoicePDFService._get_company_details(db)
         
         invoice_data = {
             'invoice_number': purchase.purchase_number,
@@ -250,13 +252,7 @@ class InvoicePDFService:
         if not exchange:
             raise ValueError(f"Exchange {exchange_id} not found")
         
-        company = {
-            'name': InvoicePDFService.COMPANY_NAME,
-            'address': InvoicePDFService.COMPANY_ADDRESS,
-            'phone': InvoicePDFService.COMPANY_PHONE,
-            'email': InvoicePDFService.COMPANY_EMAIL,
-            'gstin': InvoicePDFService.COMPANY_GSTIN
-        }
+        company = InvoicePDFService._get_company_details(db)
         
         invoice_data = {
             'invoice_number': f"EXC-{exchange.id}",

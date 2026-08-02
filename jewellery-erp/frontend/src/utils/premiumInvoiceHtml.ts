@@ -16,6 +16,7 @@ export const generatePremiumHTML = (data: any, qrDataUrl?: string) => {
   const companyPhone = data.company?.phone || '+91 85048 37854';
   const companyEmail = data.company?.email || 'saideepjewellers@gmail.com';
   const gstin = data.company?.gstin || '08ABCDE1234F1Z5';
+  const companyTagline = data.company?.tagline || 'Trust. Purity. Elegance.';
   
   const customerName = data.customer?.name || '';
   const customerPhone = data.customer?.phone || '';
@@ -536,7 +537,7 @@ export const generatePremiumHTML = (data: any, qrDataUrl?: string) => {
         <div class="logo-icon"><span>S</span></div>
         <div class="brand-title">${companyName}</div>
         <div class="brand-subtitle">JEWELLERS</div><br>
-        <div class="brand-tagline">Trust. Purity. Elegance.</div>
+        <div class="brand-tagline">${companyTagline}</div>
       </div>
       
       <div class="invoice-meta">
