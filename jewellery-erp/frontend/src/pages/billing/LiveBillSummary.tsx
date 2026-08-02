@@ -20,8 +20,8 @@ export default function LiveBillSummary() {
   const totalMaking = cart.reduce((sum, item) => sum + item.makingAmount, 0);
   const totalHallmark = cart.reduce((sum, item) => sum + item.hallmark, 0);
   const totalOther = cart.reduce((sum, item) => sum + item.otherCharges, 0);
-  const totalItemDiscount = cart.reduce((sum, item) => sum + item.discount, 0);
-  const totalDiscount = totalItemDiscount + globalDiscount;
+  // const totalItemDiscount = cart.reduce((sum, item) => sum + item.discount, 0);
+  // const totalDiscount = totalItemDiscount + globalDiscount;
   
   const baseTaxableAmount = cart.reduce((sum, item) => sum + item.taxableAmount, 0);
   const taxableAmount = Math.max(0, baseTaxableAmount - globalDiscount);

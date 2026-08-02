@@ -34,7 +34,7 @@ def update_settings(settings_in: List[SettingItem], db: Session = Depends(get_db
 
 @router.post("/logo")
 async def upload_logo(file: UploadFile = File(...)):
-    static_dir = os.path.join(os.path.dirname(__file__), "..", "..", "static")
+    static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "static")
     os.makedirs(static_dir, exist_ok=True)
     
     file_location = os.path.join(static_dir, "logo.png")

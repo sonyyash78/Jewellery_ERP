@@ -52,7 +52,7 @@ export default function SettingsModule() {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `jewellery_erp_backup_${new Date().toISOString().slice(0,10)}.sqlite`);
+      link.setAttribute('download', `jewellery_erp_backup_${new Date().toISOString().slice(0,10)}.sql`);
       document.body.appendChild(link);
       link.click();
       toast.success('Database backup downloaded successfully!');

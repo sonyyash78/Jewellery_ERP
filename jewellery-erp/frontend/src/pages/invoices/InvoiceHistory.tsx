@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { axiosClient } from '../../api/axiosClient';
 import { generateInvoicePDF } from '../../utils/invoicePdfUtils';
+import { generatePremiumHTML } from '../../utils/premiumInvoiceHtml';
 import {
   Search,
   Filter,
@@ -109,13 +110,14 @@ export default function InvoiceHistory() {
     try {
       toast.loading('Generating PDF...', { id: toastId });
       const res = await axiosClient.get(getPdfEndpoint(invoice));
-      if (!res.data) throw new Error('No data received from server');
       
+      // Use the centralized PDF generator which handles html2pdf logic
       await generateInvoicePDF(res.data);
+      
       toast.success('PDF downloaded successfully', { id: toastId });
     } catch (error: any) {
       console.error('PDF generation error:', error);
-      const errorMessage = error.response?.data?.detail || error.message || 'Unknown error occurred';
+      const errorMessage = error.response?.data?.detail || error.message || 'Unknown error';
       toast.error(`Failed to generate PDF: ${errorMessage}`, { id: toastId, duration: 5000 });
     }
   };
@@ -125,7 +127,16 @@ export default function InvoiceHistory() {
       const res = await axiosClient.get(getPdfEndpoint(invoice));
       const printWindow = window.open('', '_blank');
       if (printWindow) {
-        printWindow.document.write(generatePrintHTML(res.data));
+        let qrDataUrl = '';
+        try {
+          const QRCode = (await import('qrcode')).default;
+          const qrData = `${res.data.invoice?.invoice_number}|${res.data.totals?.grand_total}`;
+          qrDataUrl = await QRCode.toDataURL(qrData, { width: 60, margin: 0 });
+        } catch (e) {
+          console.warn('Failed to generate QR for print');
+        }
+        
+        printWindow.document.write(generatePremiumHTML(res.data, qrDataUrl));
         printWindow.document.close();
         printWindow.focus();
         setTimeout(() => {
@@ -174,170 +185,6 @@ export default function InvoiceHistory() {
     } catch (error) {
       toast.error('Failed to cancel invoice');
     }
-  };
-
-  const generatePrintHTML = (data: any) => {
-    const isExchange = data.type === 'exchange';
-    const isPurchase = data.type === 'purchase';
-    const title = isExchange ? 'EXCHANGE INVOICE' : isPurchase ? 'PURCHASE RECEIPT' : 'TAX INVOICE';
-    
-    return `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>${title} ${data.invoice.invoice_number}</title>
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { font-family: Arial, sans-serif; padding: 20px; }
-            .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #d4af37; padding-bottom: 20px; }
-            .company-name { font-size: 24px; font-weight: bold; color: #d4af37; }
-            .invoice-info { display: flex; justify-content: space-between; margin: 20px 0; }
-            .invoice-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-            .invoice-table th, .invoice-table td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-            .invoice-table th { background: #f5f5f5; font-weight: bold; }
-            .totals { margin-left: auto; width: 300px; margin-top: 20px; }
-            .totals-row { display: flex; justify-content: space-between; padding: 5px 0; }
-            .grand-total { font-size: 18px; font-weight: bold; border-top: 2px solid #000; padding-top: 10px; }
-            @media print { button { display: none; } }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <div class="company-name">${data.company.name}</div>
-            <div>${data.company.address}</div>
-            <div>Phone: ${data.company.phone} | GSTIN: ${data.company.gstin}</div>
-          </div>
-          
-          <h2 style="text-align: center; margin-bottom: 20px;">${title}</h2>
-          
-          <div class="invoice-info">
-            <div>
-              <strong>${isPurchase ? 'Received From:' : 'Bill To:'}</strong><br>
-              ${data.customer.name}<br>
-              ${data.customer.phone || ''}<br>
-              ${data.customer.address || ''}
-            </div>
-            <div>
-              <strong>Invoice No:</strong> ${data.invoice.invoice_number}<br>
-              <strong>Date:</strong> ${data.invoice.invoice_date}<br>
-              <strong>Status:</strong> ${data.invoice.status}
-            </div>
-          </div>
-          
-          ${isExchange ? `
-          <h3 style="margin-top:20px;">Old Items Traded In</h3>
-          <table class="invoice-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Item Description</th>
-                <th>Metal</th>
-                <th>Net Weight (g)</th>
-                <th>Tanch (%)</th>
-                <th>Rate</th>
-                <th>Amount (Rs.)</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${data.old_items?.map((item: any, i: number) => `
-                <tr>
-                  <td>${i + 1}</td>
-                  <td>${item.item_name}</td>
-                  <td>${item.metal_type || '-'}</td>
-                  <td>${item.net_weight?.toFixed(3) || '-'}</td>
-                  <td>${item.tanch_percentage?.toFixed(2) || '-'}</td>
-                  <td>Rs. ${item.applied_rate?.toFixed(1) || '-'}</td>
-                  <td>Rs. ${item.final_price?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-          <div style="text-align:right; font-weight:bold; margin-bottom:20px;">
-            Total Old Value: Rs. ${data.invoice.total_old_value?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-          </div>
-          ` : ''}
-          
-          <h3 style="margin-top:20px;">${isExchange ? 'New Items Purchased' : 'Items'}</h3>
-          <table class="invoice-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Item Description</th>
-                <th>Metal</th>
-                <th>Net Weight (g)</th>
-                <th>Rate</th>
-                <th>Making (Rs.)</th>
-                <th>Hallmark</th>
-                <th>Other Chg</th>
-                <th>Amount (Rs.)</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${data.items.map((item: any, i: number) => `
-                <tr>
-                  <td>${i + 1}</td>
-                  <td>${item.item_name}</td>
-                  <td>${item.metal_type || '-'}</td>
-                  <td>${item.net_weight?.toFixed(3) || item.pure_weight?.toFixed(3) || '-'}</td>
-                  <td>Rs. ${item.applied_rate?.toFixed(1) || '0.0'}</td>
-                  <td>
-                    ${item.making_charge_type === 'percent' && item.making_charge_rate ? `${item.making_charge_rate}%<br>(Rs. ${item.making_charges?.toLocaleString('en-IN', {minimumFractionDigits: 0})})` : 
-                      item.making_charge_type === 'per_gm' && item.making_charge_rate ? `Rs. ${item.making_charge_rate}/g<br>(Rs. ${item.making_charges?.toLocaleString('en-IN', {minimumFractionDigits: 0})})` : 
-                      item.making_charges ? `Rs. ${item.making_charges.toLocaleString('en-IN', {minimumFractionDigits: 2})}` : '-'
-                    }
-                  </td>
-                  <td>Rs. ${item.hallmark_charges?.toFixed(1) || '0.0'}</td>
-                  <td>Rs. ${item.other_charges?.toFixed(1) || '0.0'}</td>
-                  <td>Rs. ${item.final_price.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-          
-          <div class="totals">
-            <div class="totals-row">
-              <span>Subtotal:</span>
-              <span>Rs. ${data.totals.subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-            </div>
-            <div class="totals-row">
-              <span>Tax (GST 3%):</span>
-              <span>Rs. ${data.totals.tax_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-            </div>
-            ${data.totals.discount_amount > 0 ? `
-              <div class="totals-row">
-                <span>${isExchange ? 'Less Trade-in Value:' : 'Discount:'}</span>
-                <span>- Rs. ${data.totals.discount_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-              </div>
-            ` : ''}
-            <div class="totals-row grand-total">
-              <span>Grand Total:</span>
-              <span>Rs. ${data.totals.grand_total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-            </div>
-            ${data.invoice.amount_paid !== undefined ? `
-            <div class="totals-row" style="font-weight: bold; color: #2e7d32; margin-top: 5px;">
-              <span>Amount Paid:</span>
-              <span>Rs. ${data.invoice.amount_paid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-            </div>
-            <div class="totals-row" style="font-weight: bold; color: #d32f2f;">
-              <span>Balance Due:</span>
-              <span>Rs. ${data.invoice.balance_due.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-            </div>
-            ` : ''}
-          </div>
-          
-          <div style="margin-top: 40px; font-size: 12px; color: #666;">
-            <p>Total Items: ${data.totals.total_items} | Total Weight: ${data.totals.total_weight.toFixed(3)} g</p>
-            <p style="margin-top: 20px;"><strong>Terms & Conditions:</strong></p>
-            <p>1. Goods once sold cannot be returned or exchanged.</p>
-            <p>2. All disputes subject to local jurisdiction only.</p>
-          </div>
-          
-          <div style="text-align: center; margin-top: 40px; font-size: 12px; color: #999;">
-            Thank you for your business!
-          </div>
-        </body>
-      </html>
-    `;
   };
 
   const getStatusBadge = (status: string) => {

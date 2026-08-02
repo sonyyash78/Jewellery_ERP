@@ -39,15 +39,13 @@ export default function SupplierProfile({ id, onBack }: { id: number, onBack: ()
         toast.error('Failed to download PDF');
       }
     } else {
-      generatePaymentReceiptPDF(row, supplier, false);
+      generatePaymentReceiptPDF(row, supplier);
     }
   };
 
   const handleExportExcel = () => {
     if (!data?.bills) return;
     const ws = XLSX.utils.json_to_sheet(data.bills.map((row: any) => ({
-      Date: new Date(row.date).toLocaleString(),
-      Type: row.type,
       Date: new Date(row.date).toLocaleString(),
       Type: row.type,
       RefNo: row.bill_no,

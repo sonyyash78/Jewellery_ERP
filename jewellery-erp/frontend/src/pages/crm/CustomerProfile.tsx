@@ -39,7 +39,7 @@ export default function CustomerProfile({ id, onBack }: { id: number, onBack: ()
         toast.error('Failed to download PDF');
       }
     } else {
-      generatePaymentReceiptPDF(row, customer, true);
+      generatePaymentReceiptPDF(row, customer);
     }
   };
 
