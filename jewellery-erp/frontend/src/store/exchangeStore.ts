@@ -9,6 +9,13 @@ export interface OldItem {
   grossWeight: number;
   stoneWeight: number;
   netWeight: number;
+  wastage: number;
+  fineWeight: number;
+  labourCharge: number;
+  testingMeltingCharge: number;
+  hallmarkCharge: number;
+  otherCharges: number;
+  discount: number;
   rateApplied: number;
   calculatedValue: number;
 }
@@ -18,11 +25,19 @@ export interface NewItem {
   itemCode: string;
   itemName: string;
   metal: string;
+  grossWeight: number;
+  stoneWeight: number;
   netWeight: number;
+  touchPurity: number;
+  wastage: number;
+  fineWeight: number;
   rateApplied: number;
+  makingChargeType: string;
+  makingChargeRate: number;
   makingCharges: number;
   hallmark: number;
   otherCharges: number;
+  discount: number;
   finalPrice: number;
 }
 

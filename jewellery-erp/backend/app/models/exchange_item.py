@@ -17,6 +17,15 @@ class ExchangeItem(Base):
     stone_weight: Mapped[float] = mapped_column(DECIMAL(10, 3), default=0)
     net_weight: Mapped[float] = mapped_column(DECIMAL(10, 3))
     
+    wastage: Mapped[float] = mapped_column(DECIMAL(5, 2), default=0.0)
+    fine_weight: Mapped[float] = mapped_column(DECIMAL(10, 3), default=0.0)
+    
+    labour_charge: Mapped[float] = mapped_column(DECIMAL(10, 2), default=0.0)
+    testing_melting_charge: Mapped[float] = mapped_column(DECIMAL(10, 2), default=0.0)
+    hallmark_charge: Mapped[float] = mapped_column(DECIMAL(10, 2), default=0.0)
+    other_charges: Mapped[float] = mapped_column(DECIMAL(10, 2), default=0.0)
+    discount: Mapped[float] = mapped_column(DECIMAL(10, 2), default=0.0)
+    
     rate_applied: Mapped[float] = mapped_column(DECIMAL(10, 2))
     calculated_value: Mapped[float] = mapped_column(DECIMAL(12, 2))
 

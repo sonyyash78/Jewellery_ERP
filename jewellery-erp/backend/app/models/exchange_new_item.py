@@ -12,7 +12,21 @@ class ExchangeNewItem(Base):
     item_name: Mapped[str] = mapped_column(String(100))
     metal: Mapped[str] = mapped_column(String(50))
     net_weight: Mapped[float] = mapped_column(DECIMAL(10, 3))
+    gross_weight: Mapped[float] = mapped_column(DECIMAL(10, 3), default=0.0)
+    stone_weight: Mapped[float] = mapped_column(DECIMAL(10, 3), default=0.0)
     
+    touch_purity: Mapped[float] = mapped_column(DECIMAL(5, 2), default=100.0)
+    wastage: Mapped[float] = mapped_column(DECIMAL(5, 2), default=0.0)
+    fine_weight: Mapped[float] = mapped_column(DECIMAL(10, 3), default=0.0)
+    
+    making_charge_type: Mapped[str] = mapped_column(String(20), default="flat")
+    making_charge_rate: Mapped[float] = mapped_column(DECIMAL(10, 2), default=0.0)
+    making_charges_amount: Mapped[float] = mapped_column(DECIMAL(10, 2), default=0.0)
+    hallmark_charges: Mapped[float] = mapped_column(DECIMAL(10, 2), default=0.0)
+    other_charges: Mapped[float] = mapped_column(DECIMAL(10, 2), default=0.0)
+    discount: Mapped[float] = mapped_column(DECIMAL(10, 2), default=0.0)
+    
+    rate_applied: Mapped[float] = mapped_column(DECIMAL(10, 2), default=0.0)
     final_price: Mapped[float] = mapped_column(DECIMAL(12, 2))
 
     exchange: Mapped["Exchange"] = relationship("Exchange", back_populates="new_items")

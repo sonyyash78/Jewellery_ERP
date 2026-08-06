@@ -113,6 +113,8 @@ class CalculationService:
     def calculate_selling(
         net_weight: Decimal,
         metal_rate: Decimal,
+        touch_purity: Decimal = Decimal('100'),
+        wastage: Decimal = Decimal('0'),
         making_rate: Decimal = Decimal('0'),
         making_type: str = 'FIXED',  # 'FIXED' or 'PER_GRAM'
         hallmark: Decimal = Decimal('0'),
@@ -123,7 +125,8 @@ class CalculationService:
         """
         Calculate selling totals.
         
-        Metal Value = Net Weight × Rate
+        Fine Weight = Net Weight × (Touch + Wastage) / 100
+        Metal Value = Fine Weight × Rate (or Net Weight × Rate if no purity specified)
         Making Charge = Net Weight × Making Rate (if PER_GRAM) or Making Rate (if FIXED)
         Taxable = Metal Value + Making + Hallmark + Other - Discount
         Grand Total = Taxable + GST
@@ -139,6 +142,8 @@ class CalculationService:
         # Convert to Decimal
         net_weight = CalculationService._to_decimal(net_weight)
         metal_rate = CalculationService._to_decimal(metal_rate)
+        touch_purity = CalculationService._to_decimal(touch_purity)
+        wastage = CalculationService._to_decimal(wastage)
         making_rate = CalculationService._to_decimal(making_rate)
         hallmark = CalculationService._to_decimal(hallmark)
         other = CalculationService._to_decimal(other)
@@ -146,7 +151,13 @@ class CalculationService:
         gst_rate = CalculationService._to_decimal(gst_rate)
         
         # Calculate
-        metal_value = net_weight * metal_rate
+        fine_weight = net_weight * (touch_purity + wastage) / Decimal('100')
+        
+        # If touch_purity is 100 and wastage is 0, we can just use net_weight (standard case). 
+        # But mathematically, fine_weight == net_weight in that case anyway.
+        # In typical retail, metal rate is sometimes quoted for the item's purity (e.g. 22K rate),
+        # so if touch_purity is not 100, we apply it. If it is 100, fine_weight equals net_weight.
+        metal_value = fine_weight * metal_rate
         
         if making_type == 'PER_GRAM':
             making_charge = net_weight * making_rate
@@ -158,6 +169,7 @@ class CalculationService:
         grand_total = taxable + gst
         
         return {
+            'fine_weight': CalculationService._round_final(fine_weight, CalculationService.WEIGHT_PLACES),
             'metal_value': CalculationService._round_final(metal_value),
             'making_charge': CalculationService._round_final(making_charge),
             'taxable': CalculationService._round_final(taxable),

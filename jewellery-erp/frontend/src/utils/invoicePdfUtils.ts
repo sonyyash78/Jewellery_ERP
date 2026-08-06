@@ -27,6 +27,7 @@ export interface InvoicePDFData {
     gross_weight?: number;
     stone_weight?: number;
     net_weight?: number;
+    fine_weight?: number;
     pure_weight?: number;
     making_charge_type?: string;
     making_charge_rate?: number;
@@ -44,6 +45,7 @@ export interface InvoicePDFData {
     gross_weight?: number;
     stone_weight?: number;
     net_weight?: number;
+    fine_weight?: number;
     tanch_percentage?: number;
     final_price: number;
     applied_rate?: number;

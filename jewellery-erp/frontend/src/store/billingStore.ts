@@ -18,6 +18,7 @@ export interface BaseCalcForm {
 export interface GoldForm extends BaseCalcForm {
   purity: string;
   touch: number;
+  wastage: number;
   stoneWeight: number;
   ratePerGm: number;
   hallmark: number;
@@ -25,6 +26,7 @@ export interface GoldForm extends BaseCalcForm {
 
 export interface SilverForm extends BaseCalcForm {
   tanch: number;
+  wastage: number;
   silverPurity: string;
   ratePerKg: number;
 }
@@ -38,9 +40,11 @@ export interface BillItem {
   itemName: string;
   purityDisplay: string;
   touchDisplay: number;
+  wastageDisplay: number;
   grossWeight: number;
   stoneWeight: number;
   netWeight: number;
+  fineWeight: number;
   rateDisplay: number;
   
   // Math fields
@@ -95,7 +99,7 @@ interface BillingStoreState {
 }
 
 const initialGoldForm: GoldForm = {
-  itemName: '', category: '', hsn: '', purity: '22K Gold', touch: 91.6,
+  itemName: '', category: '', hsn: '', purity: '22K Gold', touch: 91.6, wastage: 0,
   grossWeight: 0, stoneWeight: 0, ratePerGm: 7250,
   makingChargeType: 'per_gm', makingChargeValue: 650,
   hallmark: 120, otherCharges: 0, discount: 0
@@ -103,7 +107,7 @@ const initialGoldForm: GoldForm = {
 
 const initialSilverForm: SilverForm = {
   itemName: '', category: '', hsn: '',
-  grossWeight: 0, tanch: 65, silverPurity: 'Fine', ratePerKg: 90000,
+  grossWeight: 0, tanch: 65, wastage: 0, silverPurity: 'Fine', ratePerKg: 90000,
   makingChargeType: 'per_gm', makingChargeValue: 30,
   otherCharges: 0, discount: 0
 };

@@ -11,10 +11,13 @@ class SilverCalculation(Base):
     applied_rate: Mapped[float] = mapped_column(DECIMAL(10, 2), default=0.0)
     gross_weight: Mapped[float] = mapped_column(DECIMAL(10, 3))
     tanch_percentage: Mapped[float] = mapped_column(DECIMAL(5, 2))
+    wastage: Mapped[float] = mapped_column(DECIMAL(5, 2), default=0.0)
     pure_weight: Mapped[float] = mapped_column(DECIMAL(10, 3))
     making_charge_type: Mapped[str] = mapped_column(String(20), default="flat")
     making_charge_rate: Mapped[float] = mapped_column(DECIMAL(10, 2), default=0.0)
     making_charges_amount: Mapped[float] = mapped_column(DECIMAL(10, 2), default=0.0)
+    other_charges: Mapped[float] = mapped_column(DECIMAL(10, 2), default=0.0)
+    discount: Mapped[float] = mapped_column(DECIMAL(10, 2), default=0.0)
     total_silver_value: Mapped[float] = mapped_column(DECIMAL(12, 2))
 
     invoice_item: Mapped["InvoiceItem"] = relationship("InvoiceItem", back_populates="silver_calculation")

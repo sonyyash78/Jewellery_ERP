@@ -64,9 +64,29 @@ export const generatePremiumHTML = (
   const gstAmount = invoice.tax_amount || 0;
   const grandTotal = invoice.grand_total || 0;
   
+  // Calculate fine weights and metal values for settlements
+  let goldFineBilled = 0;
+  let goldFineReceived = 0;
+  let goldBilledValue = 0;
+  let goldReceivedValue = 0;
+
+  let silverFineBilled = 0;
+  let silverFineReceived = 0;
+  let silverBilledValue = 0;
+  let silverReceivedValue = 0;
+
   // Generate items HTML
   let itemsHtml = '';
   items.forEach((item, index) => {
+    const isGold = item.metal_type?.toLowerCase() === 'gold';
+    if (isGold) {
+        goldFineBilled += item.fine_weight || item.net_weight || 0;
+        goldBilledValue += item.metal_value || 0;
+    } else {
+        silverFineBilled += item.fine_weight || item.net_weight || 0;
+        silverBilledValue += item.metal_value || 0;
+    }
+
     itemsHtml += `
       <tr>
         <td>${index + 1}</td>
@@ -75,12 +95,11 @@ export const generatePremiumHTML = (
           <div style="font-size: 11px; color: #7f8c8d; font-weight: 400; margin-top: 2px;">Gross: ${item.gross_weight || 0}g</div>
         </td>
         <td>${item.metal_type || '-'}</td>
-        <td>${item.tanch_percentage ? item.tanch_percentage + '%' : '-'}</td>
-        <td>${(item.net_weight || item.pure_weight || 0).toFixed(3)}g</td>
+        <td>${item.tanch_percentage ? item.tanch_percentage + (isGold ? 'K' : '%') : '-'}</td>
+        <td>${(item.net_weight || item.pure_weight || 0).toFixed(3)}</td>
         <td>${formatCurrency(item.applied_rate || 0)}</td>
         <td>${formatCurrency(item.making_charges || 0)}</td>
-        <td>${formatCurrency(item.hallmark_charges || 0)}</td>
-        <td>${formatCurrency(item.other_charges || 0)}</td>
+        <td>${formatCurrency((item.other_charges || 0) + (item.hallmark_charges || 0))}</td>
         <td style="font-weight: 700;">₹ ${formatCurrency(item.final_price)}</td>
       </tr>
     `;
@@ -88,6 +107,15 @@ export const generatePremiumHTML = (
   
   // Also add old items if any
   oldItems.forEach((item, index) => {
+    const isGold = item.metal_type?.toLowerCase() === 'gold';
+    if (isGold) {
+        goldFineReceived += item.fine_weight || item.net_weight || 0;
+        goldReceivedValue += item.final_price || 0;
+    } else {
+        silverFineReceived += item.fine_weight || item.net_weight || 0;
+        silverReceivedValue += item.final_price || 0;
+    }
+
     itemsHtml += `
       <tr style="background-color: #fcf3f3;">
         <td>${items.length + index + 1}</td>
@@ -96,10 +124,9 @@ export const generatePremiumHTML = (
           <div style="font-size: 11px; color: #7f8c8d; margin-top: 2px;">Gross: ${item.gross_weight || 0}g</div>
         </td>
         <td>${item.metal_type || '-'}</td>
-        <td>${item.tanch_percentage ? item.tanch_percentage + '%' : '-'}</td>
-        <td>${(item.net_weight || 0).toFixed(3)}g</td>
+        <td>${item.tanch_percentage ? item.tanch_percentage + (isGold ? 'K' : '%') : '-'}</td>
+        <td>${(item.net_weight || 0).toFixed(3)}</td>
         <td>${formatCurrency(item.applied_rate || 0)}</td>
-        <td>-</td>
         <td>-</td>
         <td>-</td>
         <td style="font-weight: 700; color: #c0392b;">-₹ ${formatCurrency(item.final_price)}</td>
@@ -114,10 +141,84 @@ export const generatePremiumHTML = (
     for (let i = 0; i < minRows - totalRows; i++) {
       itemsHtml += `
         <tr>
-          <td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+          <td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
         </tr>
       `;
     }
+  }
+
+  const generateSettlementBox = (metal: 'GOLD' | 'SILVER', fineBilled: number, fineReceived: number, billedValue: number, receivedValue: number) => {
+      const fineBalance = fineBilled - fineReceived;
+      const valueBalance = billedValue - receivedValue;
+      const color = metal === 'GOLD' ? '#C8A045' : '#7f8c8d';
+      const bgColor = metal === 'GOLD' ? '#FDF8E8' : '#F4F6F7';
+
+      return `
+        <div style="flex: 1; border: 1px solid ${color}; border-radius: 8px; overflow: hidden;">
+            <div style="background: ${color}; color: white; text-align: center; font-weight: 700; padding: 6px 0; font-size: 12px; letter-spacing: 1px;">
+                ${metal} SETTLEMENT
+            </div>
+            <div style="padding: 10px; font-size: 11px;">
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
+                    <tr><td style="padding: 2px 0;">Fine Billed (Weight)</td><td style="text-align: right;">: ${fineBilled.toFixed(3)} gm</td></tr>
+                    <tr><td style="padding: 2px 0;">Fine Received (Weight)</td><td style="text-align: right;">: ${fineReceived.toFixed(3)} gm</td></tr>
+                    <tr><td style="padding: 2px 0; font-weight: 700;">Fine Balance</td><td style="text-align: right; font-weight: 700; color: ${fineBalance < 0 ? '#c0392b' : '#27ae60'};">: ${fineBalance.toFixed(3)} gm</td></tr>
+                </table>
+                
+                <table style="width: 100%; border-collapse: collapse; text-align: center; border-top: 1px solid #E5E7EB; border-bottom: 1px solid #E5E7EB; margin-bottom: 10px;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid #E5E7EB; background: ${bgColor};">
+                            <th style="padding: 6px; text-align: left;">Particulars</th>
+                            <th style="padding: 6px;">Weight (gm)</th>
+                            <th style="padding: 6px; text-align: right;">Amount (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="padding: 4px; text-align: left;">Fine Billed</td>
+                            <td style="padding: 4px;">${fineBilled.toFixed(3)}</td>
+                            <td style="padding: 4px; text-align: right;">${formatCurrency(billedValue)}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 4px; text-align: left;">Fine Received</td>
+                            <td style="padding: 4px;">${fineReceived.toFixed(3)}</td>
+                            <td style="padding: 4px; text-align: right;">${formatCurrency(receivedValue)}</td>
+                        </tr>
+                        <tr style="font-weight: 700; color: ${fineBalance < 0 ? '#c0392b' : '#27ae60'};">
+                            <td style="padding: 4px; text-align: left;">Fine (Balance)</td>
+                            <td style="padding: 4px;">${fineBalance.toFixed(3)}</td>
+                            <td style="padding: 4px; text-align: right;">${formatCurrency(valueBalance)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div style="background: ${bgColor}; border: 1px solid ${color}33; border-radius: 4px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 13px;">
+                    <span>FINE DUE (${metal})</span>
+                    <span style="color: ${valueBalance < 0 ? '#c0392b' : '#27ae60'};">₹ ${formatCurrency(valueBalance)}</span>
+                </div>
+            </div>
+        </div>
+      `;
+  };
+
+  let settlementsHtml = '';
+  if (goldFineBilled > 0 || goldFineReceived > 0 || silverFineBilled > 0 || silverFineReceived > 0) {
+      settlementsHtml = `
+      <div style="margin-top: 20px;">
+        <div style="text-align: center; color: var(--gold); font-family: 'Cinzel', serif; font-weight: 700; font-size: 14px; margin-bottom: 10px;">
+            <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; fill: currentColor; vertical-align: middle; margin-right: 5px;"><path d="M12 2L4 6v2h16V6l-8-4zm0 2.5l5.5 2.75h-11L12 4.5zM4 10v9h16v-9H4zm14 7H6v-5h12v5z"/></svg>
+            METAL SETTLEMENT (IF APPLICABLE)
+        </div>
+        <div style="display: flex; gap: 20px;">
+            ${(goldFineBilled > 0 || goldFineReceived > 0) ? generateSettlementBox('GOLD', goldFineBilled, goldFineReceived, goldBilledValue, goldReceivedValue) : ''}
+            ${(silverFineBilled > 0 || silverFineReceived > 0) ? generateSettlementBox('SILVER', silverFineBilled, silverFineReceived, silverBilledValue, silverReceivedValue) : ''}
+        </div>
+        <div style="text-align: center; font-size: 10px; color: #7f8c8d; margin-top: 5px;">
+            <svg viewBox="0 0 24 24" style="width: 12px; height: 12px; fill: currentColor; vertical-align: middle;"><path d="M11 15h2v2h-2zm0-8h2v6h-2zm.99-5C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/></svg>
+            If fine balance is 0.000 gm, no fine is due. If there is any difference, fine due will be charged as per rate.
+        </div>
+      </div>
+      `;
   }
 
   // The actual HTML template matching the screenshot perfectly
@@ -858,14 +959,13 @@ export const generatePremiumHTML = (
     <table class="items-table">
       <thead>
         <tr>
-          <th>#</th>
-          <th>ITEM DESCRIPTION</th>
+          <th>S.NO.</th>
+          <th>DESCRIPTION</th>
           <th>METAL</th>
           <th>PURITY</th>
-          <th>WEIGHT</th>
-          <th>RATE<br>(₹)</th>
+          <th>WEIGHT<br>(gm)</th>
+          <th>RATE<br>(₹/gm)</th>
           <th>MAKING<br>(₹)</th>
-          <th>HALLMARK<br>(₹)</th>
           <th>OTHER<br>(₹)</th>
           <th>AMOUNT<br>(₹)</th>
         </tr>
@@ -874,6 +974,8 @@ export const generatePremiumHTML = (
         ${itemsHtml}
       </tbody>
     </table>
+
+    ${settlementsHtml}
 
     <!-- Bottom Row -->
     <div class="bottom-row">
