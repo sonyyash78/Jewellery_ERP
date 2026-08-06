@@ -230,6 +230,7 @@ class ReportService:
         return {
             'sales': float(CalculationService._round_final(sales_taxable)),
             'total_cost': float(CalculationService._round_final(cogs)),
+            'cogs': float(CalculationService._round_final(cogs)),
             'gross_profit': float(gross_profit_result['gross_profit']),
             'expenses': float(CalculationService._round_final(total_expenses)),
             'net_profit': float(net_profit_result['net_profit']),

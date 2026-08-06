@@ -168,6 +168,81 @@ def get_unified_purchases_history(
         })
     return {"total": total, "items": results}
 
+@router.get("/gold", response_model=List[GoldPurchaseResponse])
+def get_gold_purchases(
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 100,
+) -> Any:
+    return gold_purchase_repo.get_multi(db, skip=skip, limit=limit)
+
+@router.get("/gold/{id}", response_model=GoldPurchaseResponse)
+def get_gold_purchase(
+    id: int,
+    db: Session = Depends(get_db)
+) -> Any:
+    purchase = gold_purchase_repo.get(db=db, id=id)
+    if not purchase:
+        raise HTTPException(status_code=404, detail="Gold purchase not found")
+    return purchase
+
+@router.post("/gold", response_model=GoldPurchaseResponse)
+def create_gold_purchase(
+    *,
+    db: Session = Depends(get_db),
+    purchase_in: GoldPurchaseCreate
+) -> Any:
+    # Check for duplicate invoice number
+    existing = gold_purchase_repo.get_by_invoice(db, invoice_number=purchase_in.invoice_number)
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail="A gold purchase with this invoice number already exists.",
+        )
+    return gold_purchase_repo.create(db=db, obj_in=purchase_in)
+
+@router.get("/silver", response_model=List[SilverPurchaseResponse])
+def get_silver_purchases(
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 100,
+) -> Any:
+    return silver_purchase_repo.get_multi(db, skip=skip, limit=limit)
+
+@router.get("/silver/{id}", response_model=SilverPurchaseResponse)
+def get_silver_purchase(
+    id: int,
+    db: Session = Depends(get_db)
+) -> Any:
+    purchase = silver_purchase_repo.get(db=db, id=id)
+    if not purchase:
+        raise HTTPException(status_code=404, detail="Silver purchase not found")
+    return purchase
+
+@router.post("/silver", response_model=SilverPurchaseResponse)
+def create_silver_purchase(
+    *,
+    db: Session = Depends(get_db),
+    purchase_in: SilverPurchaseCreate
+) -> Any:
+    # Check for duplicate invoice number
+    existing = silver_purchase_repo.get_by_invoice(db, invoice_number=purchase_in.invoice_number)
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail="A silver purchase with this invoice number already exists.",
+        )
+    
+    # Validate using CalculationService (no longer using old PurchaseService)
+    # The calculation is already done by frontend, we just validate
+    net_weight = Decimal(str(purchase_in.weight)) * (Decimal(str(purchase_in.final_tanch)) / Decimal('100'))
+    expected_recovered = CalculationService._round_final(net_weight, CalculationService.WEIGHT_PLACES)
+    
+    if abs(Decimal(str(purchase_in.recovered_silver)) - expected_recovered) > Decimal('0.01'):
+        raise HTTPException(status_code=400, detail="Invalid silver calculation")
+        
+    return silver_purchase_repo.create(db=db, obj_in=purchase_in)
+
 @router.get("/{id}/pdf-data")
 def get_purchase_pdf_data(
     id: int,
@@ -246,78 +321,3 @@ def delete_unified_purchase(
     purchase.status = PurchaseStatus.CANCELLED
     db.commit()
     return {"message": "Purchase cancelled successfully"}
-
-@router.get("/gold", response_model=List[GoldPurchaseResponse])
-def get_gold_purchases(
-    db: Session = Depends(get_db),
-    skip: int = 0,
-    limit: int = 100,
-) -> Any:
-    return gold_purchase_repo.get_multi(db, skip=skip, limit=limit)
-
-@router.get("/gold/{id}", response_model=GoldPurchaseResponse)
-def get_gold_purchase(
-    id: int,
-    db: Session = Depends(get_db)
-) -> Any:
-    purchase = gold_purchase_repo.get(db=db, id=id)
-    if not purchase:
-        raise HTTPException(status_code=404, detail="Gold purchase not found")
-    return purchase
-
-@router.post("/gold", response_model=GoldPurchaseResponse)
-def create_gold_purchase(
-    *,
-    db: Session = Depends(get_db),
-    purchase_in: GoldPurchaseCreate
-) -> Any:
-    # Check for duplicate invoice number
-    existing = gold_purchase_repo.get_by_invoice(db, invoice_number=purchase_in.invoice_number)
-    if existing:
-        raise HTTPException(
-            status_code=400,
-            detail="A gold purchase with this invoice number already exists.",
-        )
-    return gold_purchase_repo.create(db=db, obj_in=purchase_in)
-
-@router.get("/silver", response_model=List[SilverPurchaseResponse])
-def get_silver_purchases(
-    db: Session = Depends(get_db),
-    skip: int = 0,
-    limit: int = 100,
-) -> Any:
-    return silver_purchase_repo.get_multi(db, skip=skip, limit=limit)
-
-@router.get("/silver/{id}", response_model=SilverPurchaseResponse)
-def get_silver_purchase(
-    id: int,
-    db: Session = Depends(get_db)
-) -> Any:
-    purchase = silver_purchase_repo.get(db=db, id=id)
-    if not purchase:
-        raise HTTPException(status_code=404, detail="Silver purchase not found")
-    return purchase
-
-@router.post("/silver", response_model=SilverPurchaseResponse)
-def create_silver_purchase(
-    *,
-    db: Session = Depends(get_db),
-    purchase_in: SilverPurchaseCreate
-) -> Any:
-    # Check for duplicate invoice number
-    existing = silver_purchase_repo.get_by_invoice(db, invoice_number=purchase_in.invoice_number)
-    if existing:
-        raise HTTPException(
-            status_code=400,
-            detail="A silver purchase with this invoice number already exists.",
-        )
-    
-    # Validate using CalculationService (no longer using old PurchaseService)
-    # The calculation is already done by frontend, we just validate
-    net_weight = Decimal(str(purchase_in.weight)) * (Decimal(str(purchase_in.final_tanch)) / Decimal('100'))
-    expected_recovered = CalculationService._round_final(net_weight, CalculationService.WEIGHT_PLACES)
-    
-    if abs(Decimal(str(purchase_in.recovered_silver)) - expected_recovered) > Decimal('0.01'):
-        raise HTTPException(status_code=400, detail="Invalid silver calculation")
-        
-    return silver_purchase_repo.create(db=db, obj_in=purchase_in)
