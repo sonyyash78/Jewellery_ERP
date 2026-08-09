@@ -25,9 +25,9 @@ def create_exchange(
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
 
-    # Verify all stock items
-    stock_ids = [item.stock_item_id for item in exchange_in.new_items]
-    stock_items = db.query(StockItem).filter(StockItem.id.in_(stock_ids)).all()
+    # Verify stock items (only for items that came from inventory, not manual entries)
+    stock_ids = [item.stock_item_id for item in exchange_in.new_items if item.stock_item_id is not None]
+    stock_items = db.query(StockItem).filter(StockItem.id.in_(stock_ids)).all() if stock_ids else []
     if len(stock_items) != len(stock_ids):
         raise HTTPException(status_code=400, detail="One or more stock items not found")
         
@@ -55,7 +55,7 @@ def create_exchange(
         )
         db.add(db_old_item)
 
-    # Add new items & update stock status
+    # Add new items & update stock status only for inventory items
     for new_item_in in exchange_in.new_items:
         db_new_item = ExchangeNewItem(
             exchange_id=exchange.id,
@@ -63,9 +63,11 @@ def create_exchange(
         )
         db.add(db_new_item)
         
-        # Mark as sold
-        stock = next(s for s in stock_items if s.id == new_item_in.stock_item_id)
-        stock.status = "Sold"
+        # Mark stock item as sold only if this is an inventory item
+        if new_item_in.stock_item_id is not None:
+            stock = next((s for s in stock_items if s.id == new_item_in.stock_item_id), None)
+            if stock:
+                stock.status = "Sold"
 
     # Update Customer Ledger for the difference
     if exchange.difference_amount != 0:

@@ -1,6 +1,6 @@
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
-import { LayoutDashboard, Users, Coins, LogOut, Package, Settings, Receipt, FileText } from 'lucide-react';
+import { LayoutDashboard, Users, ArrowLeftRight, LogOut, Package, Settings, Receipt, FileText, ShoppingBag, BarChart2 } from 'lucide-react';
 import AIAssistant from '../ai/AIAssistant';
 
 export default function AdminLayout() {
@@ -14,9 +14,9 @@ export default function AdminLayout() {
     { name: 'Inventory', path: '/inventory', icon: <Package size={20} /> },
     { name: 'Billing', path: '/billing', icon: <Receipt size={20} /> },
     { name: 'Invoices', path: '/invoices', icon: <FileText size={20} /> },
-    { name: 'Exchange', path: '/exchange', icon: <Coins size={20} /> },
-    { name: 'Purchases', path: '/purchases', icon: <Coins size={20} /> },
-    { name: 'Reports', path: '/reports', icon: <Coins size={20} /> },
+    { name: 'Exchange', path: '/exchange', icon: <ArrowLeftRight size={20} /> },
+    { name: 'Purchases', path: '/purchases', icon: <ShoppingBag size={20} /> },
+    { name: 'Reports', path: '/reports', icon: <BarChart2 size={20} /> },
     { name: 'Settings', path: '/settings', icon: <Settings size={20} /> },
   ];
 

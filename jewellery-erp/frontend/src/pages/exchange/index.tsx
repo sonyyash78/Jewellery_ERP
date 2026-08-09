@@ -46,11 +46,23 @@ export default function ExchangeModule() {
       old_items: oldItems.map(i => ({
         item_name: i.itemName, metal: i.metal, purity: i.purity, touch: i.touch,
         gross_weight: i.grossWeight, stone_weight: i.stoneWeight, net_weight: i.netWeight,
+        wastage: i.wastage || 0, fine_weight: i.fineWeight || 0,
+        labour_charge: i.labourCharge || 0, testing_melting_charge: i.testingMeltingCharge || 0,
+        hallmark_charge: i.hallmarkCharge || 0, other_charges: i.otherCharges || 0,
+        discount: i.discount || 0,
         rate_applied: i.rateApplied, calculated_value: i.calculatedValue
       })),
       new_items: newItems.map(i => ({
         stock_item_id: i.stockItemId, item_name: i.itemName, metal: i.metal,
-        net_weight: i.netWeight, final_price: i.finalPrice
+        net_weight: i.netWeight, gross_weight: i.grossWeight || 0,
+        stone_weight: i.stoneWeight || 0, touch_purity: i.touchPurity || 100,
+        wastage: i.wastage || 0, fine_weight: i.fineWeight || 0,
+        making_charge_type: i.makingChargeType || 'flat',
+        making_charge_rate: i.makingChargeRate || 0,
+        making_charges_amount: i.makingCharges || 0,
+        hallmark_charges: i.hallmark || 0, other_charges: i.otherCharges || 0,
+        discount: i.discount || 0, rate_applied: i.rateApplied || 0,
+        final_price: i.finalPrice
       }))
     };
   };

@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from decimal import Decimal
 from app.db.database import get_db
 from app.repositories.transaction_repo import gold_purchase_repo, silver_purchase_repo
-from app.schemas.purchases import GoldPurchaseCreate, GoldPurchaseResponse, SilverPurchaseCreate, SilverPurchaseResponse, UnifiedPurchaseCreate, PurchaseItemInput
+from app.schemas.purchases import GoldPurchaseCreate, GoldPurchaseResponse, SilverPurchaseCreate, SilverPurchaseResponse, UnifiedPurchaseCreate, PurchaseItemInput, SellerInfo
 from app.services.calculation_service import CalculationService
 from app.models.purchase import Purchase, PurchaseStatus
 from app.models.purchase_item import PurchaseItem
@@ -17,7 +17,7 @@ from app.api.dependencies import get_current_user
 
 router = APIRouter()
 
-def get_or_create_seller(db: Session, seller_info: 'SellerInfo'):
+def get_or_create_seller(db: Session, seller_info: SellerInfo):
     """Get existing seller by mobile or create a new one."""
     existing = db.query(Seller).filter(Seller.mobile == seller_info.mobile).first()
     if existing:
