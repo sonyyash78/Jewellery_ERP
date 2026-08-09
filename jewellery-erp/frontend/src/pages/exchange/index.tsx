@@ -121,9 +121,9 @@ export default function ExchangeModule() {
                 ))}
                 
                 {newItems.map(item => (
-                  <div key={`new-${item.stockItemId}`} className="bg-background border border-gray-800 rounded p-3 relative group">
+                  <div key={`new-${item.id}`} className="bg-background border border-gray-800 rounded p-3 relative group">
                     <div className="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => removeNewItem(item.stockItemId)} className="text-gray-600 hover:text-red-400 transition-colors"><Trash2 size={16} /></button>
+                      <button onClick={() => removeNewItem(item.id)} className="text-gray-600 hover:text-red-400 transition-colors"><Trash2 size={16} /></button>
                     </div>
                     <div className="flex justify-between items-start mb-2 pr-12">
                       <div>

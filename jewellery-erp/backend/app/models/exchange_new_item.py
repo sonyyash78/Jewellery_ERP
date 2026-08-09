@@ -7,7 +7,7 @@ class ExchangeNewItem(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     exchange_id: Mapped[int] = mapped_column(Integer, ForeignKey("exchanges.id", ondelete="CASCADE"))
-    stock_item_id: Mapped[int] = mapped_column(Integer, ForeignKey("stock_items.id", ondelete="RESTRICT"))
+    stock_item_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("stock_items.id", ondelete="SET NULL"), nullable=True)
     
     item_name: Mapped[str] = mapped_column(String(100))
     metal: Mapped[str] = mapped_column(String(50))

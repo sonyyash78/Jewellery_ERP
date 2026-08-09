@@ -61,6 +61,8 @@ from sqlalchemy import inspect, text
 def _ensure_schema():
     insp = inspect(engine)
     tables = insp.get_table_names()
+    
+    # 1. Migrate exchanges table if total_old_value missing
     if "exchanges" in tables:
         cols = {c["name"] for c in insp.get_columns("exchanges")}
         if "total_old_value" not in cols:
@@ -68,6 +70,14 @@ def _ensure_schema():
                 conn.execute(text("DROP TABLE IF EXISTS exchange_new_items"))
                 conn.execute(text("DROP TABLE IF EXISTS exchange_items"))
                 conn.execute(text("DROP TABLE IF EXISTS exchanges"))
+    
+    # 2. Check if exchange_new_items.stock_item_id is nullable, if not, drop it to recreate
+    if "exchange_new_items" in tables:
+        cols = {c["name"]: c for c in insp.get_columns("exchange_new_items")}
+        if "stock_item_id" in cols and not cols["stock_item_id"].get("nullable", False):
+            with engine.begin() as conn:
+                conn.execute(text("DROP TABLE IF EXISTS exchange_new_items"))
+                
     Base.metadata.create_all(bind=engine)
 
 _ensure_schema()

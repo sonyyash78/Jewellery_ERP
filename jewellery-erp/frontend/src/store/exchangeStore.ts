@@ -21,7 +21,8 @@ export interface OldItem {
 }
 
 export interface NewItem {
-  stockItemId: number;
+  id: string; // Used to uniquely identify manual or stock items in cart
+  stockItemId: number | null;
   itemCode: string;
   itemName: string;
   metal: string;
@@ -55,7 +56,7 @@ interface ExchangeStoreState {
   removeOldItem: (id: string) => void;
   
   addNewItem: (item: NewItem) => void;
-  removeNewItem: (stockItemId: number) => void;
+  removeNewItem: (id: string) => void;
   
   editingOldItem: OldItem | null;
   setEditingOldItem: (item: OldItem | null) => void;
@@ -77,7 +78,7 @@ export const useExchangeStore = create<ExchangeStoreState>((set) => ({
   removeOldItem: (id) => set((state) => ({ oldItems: state.oldItems.filter(i => i.id !== id) })),
   
   addNewItem: (item) => set((state) => ({ newItems: [...state.newItems, item] })),
-  removeNewItem: (id) => set((state) => ({ newItems: state.newItems.filter(i => i.stockItemId !== id) })),
+  removeNewItem: (id) => set((state) => ({ newItems: state.newItems.filter(i => i.id !== id) })),
   
   editingOldItem: null,
   setEditingOldItem: (item) => set({ editingOldItem: item }),

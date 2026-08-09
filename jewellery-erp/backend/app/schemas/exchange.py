@@ -21,7 +21,7 @@ class ExchangeItemCreate(BaseModel):
     calculated_value: float
 
 class ExchangeNewItemCreate(BaseModel):
-    stock_item_id: int
+    stock_item_id: Optional[int] = None
     item_name: str
     metal: str
     net_weight: float
