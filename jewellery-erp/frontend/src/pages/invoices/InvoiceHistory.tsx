@@ -79,9 +79,9 @@ export default function InvoiceHistory() {
         const res = await axiosClient.get(`${endpoint}?${params.toString()}`);
         setInvoices(res.data.items || res.data);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch invoices:', error);
-      toast.error('Failed to load invoice history');
+      toast.error(error?.response?.data?.detail || error.message || 'Failed to load invoice history', { id: 'invoice-history-fetch-error' });
     } finally {
       setLoading(false);
     }

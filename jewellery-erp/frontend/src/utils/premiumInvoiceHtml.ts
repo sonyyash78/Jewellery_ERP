@@ -247,9 +247,8 @@ export const renderSettlements = (metals: string[], goldSettlement: any, silverS
   if (!hasGold && !hasSilver) return '';
 
   const generateBox = (metal: 'GOLD' | 'SILVER', data: any, fullWidth: boolean) => {
-    const { fineBilled = 0, fineReceived = 0, billedValue = 0, receivedValue = 0 } = data || {};
+    const { fineBilled = 0, fineReceived = 0 } = data || {};
     const fineBalance = fineBilled - fineReceived;
-    const valueBalance = billedValue - receivedValue;
     const color = metal === 'GOLD' ? '#C8A045' : '#7f8c8d';
 
     return `
