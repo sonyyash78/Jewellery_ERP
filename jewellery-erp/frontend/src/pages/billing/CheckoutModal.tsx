@@ -24,6 +24,22 @@ export default function CheckoutModal({ payload, grandTotal, onClose, onSuccess 
   const [mode, setMode] = useState<'checkout' | 'new_customer'>('checkout');
   const [newCustomer, setNewCustomer] = useState({ first_name: '', last_name: '', phone: '', city: '' });
 
+  // Metal deposit state
+  const [goldDeposited, setGoldDeposited] = useState<number>(0);
+  const [silverDeposited, setSilverDeposited] = useState<number>(0);
+
+  // Calculate billed metals (using fine/pure weight for metal settlement)
+  const totalGoldBilled = payload.items?.reduce((sum: number, item: any) => {
+    return sum + (item.item_type === 'Gold' ? (item.gold_calculation?.fine_weight || item.gold_calculation?.net_weight || 0) : 0);
+  }, 0) || 0;
+
+  const totalSilverBilled = payload.items?.reduce((sum: number, item: any) => {
+    return sum + (item.item_type === 'Silver' ? (item.silver_calculation?.pure_weight || item.silver_calculation?.net_weight || 0) : 0);
+  }, 0) || 0;
+
+  const goldDue = totalGoldBilled - goldDeposited;
+  const silverDue = totalSilverBilled - silverDeposited;
+
   const balanceDue = grandTotal - amountPaid;
 
   useEffect(() => {
@@ -44,9 +60,54 @@ export default function CheckoutModal({ payload, grandTotal, onClose, onSuccess 
     
     setLoading(true);
     
-    // Update payload with customer and payment info
+    // Inject metal deposits as "Old Items" in the items list
+    let updatedItems = [...(payload.items || [])];
+
+    if (goldDeposited > 0) {
+      updatedItems.push({
+        item_name: "Old Gold Deposit",
+        item_type: "Gold",
+        final_price: 0,
+        gold_calculation: {
+          applied_rate: 0,
+          gross_weight: goldDeposited,
+          net_weight: goldDeposited,
+          touch_purity: 100,
+          wastage: 0,
+          fine_weight: goldDeposited,
+          making_charge_type: "flat",
+          making_charge_rate: 0,
+          making_charges_amount: 0,
+          hallmark_charges: 0,
+          total_gold_value: 0
+        }
+      });
+    }
+
+    if (silverDeposited > 0) {
+      updatedItems.push({
+        item_name: "Old Silver Deposit",
+        item_type: "Silver",
+        final_price: 0,
+        silver_calculation: {
+          applied_rate: 0,
+          gross_weight: silverDeposited,
+          net_weight: silverDeposited,
+          tanch_percentage: 100,
+          wastage: 0,
+          pure_weight: silverDeposited,
+          making_charge_type: "flat",
+          making_charge_rate: 0,
+          making_charges_amount: 0,
+          total_silver_value: 0
+        }
+      });
+    }
+
+    // Update payload with customer, payment info, and deposit items
     const finalPayload = {
       ...payload,
+      items: updatedItems,
       customer_id: selectedCustomer || null,
       amount_paid: amountPaid,
       status: balanceDue === 0 ? 'Paid' : (amountPaid === 0 ? 'Draft' : 'Completed')
@@ -124,6 +185,75 @@ export default function CheckoutModal({ payload, grandTotal, onClose, onSuccess 
                   </div>
                 </div>
               </div>
+
+              {/* Dynamic Metal Settlement Section */}
+              {(totalGoldBilled > 0 || totalSilverBilled > 0) && (
+                <div className="border-t border-gray-800 pt-4 mt-2">
+                  <div className="space-y-4">
+                    {totalGoldBilled > 0 && (
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                            Gold Settlement
+                          </h3>
+                          <span className="text-yellow-500 text-xs font-bold">BILLED: {totalGoldBilled.toFixed(3)} gm</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-[10px] font-bold text-yellow-500 uppercase tracking-widest mb-1">Gold Deposited (gm)</label>
+                            <input 
+                              type="number" 
+                              min="0"
+                              step="0.001"
+                              value={goldDeposited === 0 ? '' : goldDeposited}
+                              onChange={e => setGoldDeposited(Number(e.target.value))}
+                              placeholder="0.000"
+                              className="w-full bg-background border border-gray-700 rounded p-3 text-lg font-mono text-yellow-500 focus:border-yellow-500 outline-none transition-colors"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-yellow-500 uppercase tracking-widest mb-1">Gold Due (gm)</label>
+                            <div className={`w-full bg-gray-900 border border-gray-800 rounded p-3 text-lg font-mono ${goldDue > 0 ? 'text-red-400' : 'text-green-400'}`}>
+                              {goldDue.toFixed(3)}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {totalSilverBilled > 0 && (
+                      <div className={totalGoldBilled > 0 ? 'pt-4 border-t border-gray-800/50' : ''}>
+                        <div className="flex justify-between items-center mb-2">
+                          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                            Silver Settlement
+                          </h3>
+                          <span className="text-gray-300 text-xs font-bold">BILLED: {totalSilverBilled.toFixed(3)} gm</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Silver Deposited (gm)</label>
+                            <input 
+                              type="number" 
+                              min="0"
+                              step="0.001"
+                              value={silverDeposited === 0 ? '' : silverDeposited}
+                              onChange={e => setSilverDeposited(Number(e.target.value))}
+                              placeholder="0.000"
+                              className="w-full bg-background border border-gray-700 rounded p-3 text-lg font-mono text-gray-300 focus:border-gray-400 outline-none transition-colors"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Silver Due (gm)</label>
+                            <div className={`w-full bg-gray-900 border border-gray-800 rounded p-3 text-lg font-mono ${silverDue > 0 ? 'text-red-400' : 'text-green-400'}`}>
+                              {silverDue.toFixed(3)}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div className="border-t border-gray-800 pt-4">
                 <div className="flex justify-between items-end mb-2">

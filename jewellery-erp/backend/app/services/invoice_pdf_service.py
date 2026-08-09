@@ -125,10 +125,15 @@ class InvoicePDFService:
                     'gross_weight': float(gold_calc.gross_weight),
                     'stone_weight': float(gold_calc.stone_weight),
                     'net_weight': float(gold_calc.net_weight),
+                    'touch_purity': float(gold_calc.touch_purity),
+                    'wastage': float(gold_calc.wastage),
+                    'fine_weight': float(gold_calc.fine_weight),
                     'making_charges': float(gold_calc.making_charges_amount),
                     'making_charge_type': gold_calc.making_charge_type,
                     'making_charge_rate': float(gold_calc.making_charge_rate),
                     'hallmark_charges': float(gold_calc.hallmark_charges),
+                    'other_charges': float(gold_calc.other_charges),
+                    'discount': float(gold_calc.discount),
                     'metal_value': float(gold_calc.total_gold_value),
                     'applied_rate': float(gold_calc.applied_rate)
                 })
@@ -144,9 +149,13 @@ class InvoicePDFService:
                     'gross_weight': float(silver_calc.gross_weight),
                     'pure_weight': float(silver_calc.pure_weight),
                     'tanch_percentage': float(silver_calc.tanch_percentage),
+                    'wastage': float(silver_calc.wastage),
+                    'fine_weight': float(silver_calc.pure_weight), # same thing
                     'making_charges': float(silver_calc.making_charges_amount),
                     'making_charge_type': silver_calc.making_charge_type,
                     'making_charge_rate': float(silver_calc.making_charge_rate),
+                    'other_charges': float(silver_calc.other_charges),
+                    'discount': float(silver_calc.discount),
                     'metal_value': float(silver_calc.total_silver_value),
                     'applied_rate': float(silver_calc.applied_rate)
                 })
@@ -311,6 +320,13 @@ class InvoicePDFService:
                 'stone_weight': float(item.stone_weight),
                 'net_weight': float(item.net_weight),
                 'tanch_percentage': float(item.touch),
+                'wastage': float(item.wastage),
+                'fine_weight': float(item.fine_weight),
+                'labour_charge': float(item.labour_charge),
+                'testing_melting_charge': float(item.testing_melting_charge),
+                'hallmark_charge': float(item.hallmark_charge),
+                'other_charges': float(item.other_charges),
+                'discount': float(item.discount),
                 'applied_rate': float(item.rate_applied),
                 'final_price': float(item.calculated_value)
             })
@@ -351,15 +367,19 @@ class InvoicePDFService:
             new_items_data.append({
                 'item_name': item.item_name,
                 'metal_type': item.metal,
-                'gross_weight': gross_weight,
-                'stone_weight': stone_weight,
+                'gross_weight': float(item.gross_weight),
+                'stone_weight': float(item.stone_weight),
                 'net_weight': net_wt,
-                'making_charge_type': making_type,
-                'making_charge_rate': making_charge_rate,
-                'making_charges': making_charges,
-                'hallmark_charges': hallmark,
-                'other_charges': other,
-                'applied_rate': applied_rate,
+                'touch_purity': float(item.touch_purity),
+                'wastage': float(item.wastage),
+                'fine_weight': float(item.fine_weight),
+                'making_charge_type': item.making_charge_type,
+                'making_charge_rate': float(item.making_charge_rate),
+                'making_charges': float(item.making_charges_amount),
+                'hallmark_charges': float(item.hallmark_charges),
+                'other_charges': float(item.other_charges),
+                'discount': float(item.discount),
+                'applied_rate': float(item.rate_applied),
                 'final_price': final_p
             })
             

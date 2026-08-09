@@ -118,11 +118,14 @@ export default function SettingsModule() {
               <h3 className="text-sm font-bold text-primary uppercase mb-4">Shop Logo</h3>
               <div className="flex items-center gap-6">
                 <div className="w-24 h-24 bg-gray-900 border border-gray-700 rounded-lg flex items-center justify-center overflow-hidden">
-                  <img src={`http://localhost:8000/static/logo.png`} alt="Logo" className="max-w-full max-h-full object-contain" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                  <img src={`http://localhost:8000/static/logo.png?v=${Date.now()}`} alt="Logo" className="max-w-full max-h-full object-contain" onError={(e) => (e.currentTarget.style.display = 'none')} />
                 </div>
                 <div className="flex-1">
                   <input type="file" accept="image/png, image/jpeg" onChange={(e) => setLogoFile(e.target.files?.[0] || null)} className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-black hover:file:bg-primary-dark mb-4" />
-                  <button onClick={handleLogoUpload} className="bg-background border border-gray-700 hover:border-primary text-textMain px-4 py-2 rounded text-sm font-bold transition-colors flex items-center gap-2"><Upload size={16} /> Upload Logo</button>
+                  <button onClick={async () => {
+                    await handleLogoUpload();
+                    window.location.reload();
+                  }} className="bg-background border border-gray-700 hover:border-primary text-textMain px-4 py-2 rounded text-sm font-bold transition-colors flex items-center gap-2"><Upload size={16} /> Upload Logo</button>
                 </div>
               </div>
             </div>
@@ -156,6 +159,27 @@ export default function SettingsModule() {
                 <div className="md:col-span-2">
                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Address</label>
                   <textarea value={settings['address'] || ''} onChange={e=>setSettings({...settings, address: e.target.value})} rows={3} className="w-full bg-background border border-gray-700 rounded p-3 text-sm text-textMain focus:border-primary outline-none resize-none" />
+                </div>
+
+                <div className="md:col-span-2 mt-4 pt-4 border-t border-gray-800">
+                  <h3 className="text-primary font-bold text-sm mb-4 uppercase tracking-widest">Invoice Print Settings (Other Details)</h3>
+                </div>
+                
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Print Hallmark</label>
+                  <textarea value={settings['print_hallmark'] || ''} placeholder="BIS 916 (Gold)&#10;BIS 925 (Silver)" onChange={e=>setSettings({...settings, print_hallmark: e.target.value})} rows={2} className="w-full bg-background border border-gray-700 rounded p-3 text-sm text-textMain focus:border-primary outline-none resize-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Print Wastage</label>
+                  <input value={settings['print_wastage'] || ''} placeholder="0.00%" onChange={e=>setSettings({...settings, print_wastage: e.target.value})} className="w-full bg-background border border-gray-700 rounded p-3 text-sm text-textMain focus:border-primary outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Print Making Charges</label>
+                  <textarea value={settings['print_making_charges'] || ''} placeholder="Gold ₹ 1,000.00/gm&#10;Silver ₹ 20.00/gm" onChange={e=>setSettings({...settings, print_making_charges: e.target.value})} rows={2} className="w-full bg-background border border-gray-700 rounded p-3 text-sm text-textMain focus:border-primary outline-none resize-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Print Remarks</label>
+                  <textarea value={settings['print_remarks'] || ''} placeholder="Subject to realization of cheque." onChange={e=>setSettings({...settings, print_remarks: e.target.value})} rows={2} className="w-full bg-background border border-gray-700 rounded p-3 text-sm text-textMain focus:border-primary outline-none resize-none" />
                 </div>
               </div>
               <div className="pt-4 border-t border-gray-800 mt-4">

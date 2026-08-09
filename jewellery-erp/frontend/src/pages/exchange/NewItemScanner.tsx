@@ -35,7 +35,11 @@ export default function NewItemScanner() {
       const isGold = item.metal.toLowerCase() === 'gold';
       const metalRate = isGold ? goldRate : silverRate;
       
-      const metalValue = item.net_weight * metalRate;
+      const touchPurity = item.purity ? parseFloat(item.purity) : (isGold ? 91.6 : 65);
+      const wastage = 0; // Usually stock items don't have predefined wastage
+      const fineWeight = item.net_weight * (touchPurity / 100);
+
+      const metalValue = fineWeight * metalRate;
 
       const makingAmount = item.making_type === 'flat' 
         ? item.making_charge 
@@ -43,19 +47,28 @@ export default function NewItemScanner() {
       
       const hallmark = item.hallmark || 0;
       const otherCharges = item.other_charges || 0;
+      const discount = 0;
       
-      const finalPrice = metalValue + makingAmount + hallmark + otherCharges;
+      const finalPrice = metalValue + makingAmount + hallmark + otherCharges - discount;
 
       addNewItem({
         stockItemId: item.id,
         itemCode: item.item_code,
         itemName: item.item_name,
         metal: item.metal,
+        grossWeight: item.gross_weight || item.net_weight,
+        stoneWeight: item.stone_weight || 0,
         netWeight: item.net_weight,
+        touchPurity,
+        wastage,
+        fineWeight,
         rateApplied: metalRate,
+        makingChargeType: item.making_type || 'flat',
+        makingChargeRate: item.making_charge || 0,
         makingCharges: makingAmount,
         hallmark,
         otherCharges,
+        discount,
         finalPrice
       });
 

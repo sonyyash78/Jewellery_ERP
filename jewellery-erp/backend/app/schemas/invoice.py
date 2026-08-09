@@ -10,20 +10,29 @@ class GoldCalcCreate(BaseModel):
     gross_weight: float
     stone_weight: float = 0.0
     net_weight: float
+    touch_purity: float = 100.0
+    wastage: float = 0.0
+    fine_weight: float = 0.0
     making_charge_type: str = "flat"
     making_charge_rate: float = 0.0
     making_charges_amount: float = 0.0
     hallmark_charges: float = 0.0
+    other_charges: float = 0.0
+    discount: float = 0.0
     total_gold_value: float
 
 class SilverCalcCreate(BaseModel):
     metal_rate_id: Optional[int] = None
     applied_rate: float
     gross_weight: float
-    net_weight: float
+    tanch_percentage: float = 100.0
+    wastage: float = 0.0
+    pure_weight: float = 0.0
     making_charge_type: str = "flat"
     making_charge_rate: float = 0.0
     making_charges_amount: float = 0.0
+    other_charges: float = 0.0
+    discount: float = 0.0
     total_silver_value: float
 
 class InvoiceItemCreate(BaseModel):

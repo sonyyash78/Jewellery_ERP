@@ -120,11 +120,13 @@ def create_invoice(
                 calc_result = CalculationService.calculate_selling(
                     net_weight=Decimal(str(calc_in.net_weight)),
                     metal_rate=Decimal(str(calc_in.applied_rate)),
+                    touch_purity=Decimal(str(calc_in.touch_purity)),
+                    wastage=Decimal(str(calc_in.wastage)),
                     making_rate=Decimal(str(calc_in.making_charges_amount)),
                     making_type='FIXED',
                     hallmark=Decimal(str(calc_in.hallmark_charges)),
-                    other=Decimal('0'),
-                    discount=Decimal('0'),
+                    other=Decimal(str(calc_in.other_charges)),
+                    discount=Decimal(str(calc_in.discount)),
                     gst_rate=Decimal('3')
                 )
                 
@@ -135,8 +137,13 @@ def create_invoice(
                     gross_weight=calc_in.gross_weight,
                     stone_weight=calc_in.stone_weight,
                     net_weight=calc_in.net_weight,
+                    touch_purity=calc_in.touch_purity,
+                    wastage=calc_in.wastage,
+                    fine_weight=float(calc_result['fine_weight']),
                     making_charges_amount=float(calc_result['making_charge']),
                     hallmark_charges=calc_in.hallmark_charges,
+                    other_charges=calc_in.other_charges,
+                    discount=calc_in.discount,
                     total_gold_value=float(calc_result['metal_value'])
                 )
                 db.add(db_gold)
@@ -150,33 +157,19 @@ def create_invoice(
                         status_code=400,
                         detail="Gross weight cannot be negative"
                     )
-                if calc_in.net_weight < 0:
-                    raise HTTPException(
-                        status_code=400,
-                        detail="Net weight cannot be negative"
-                    )
-                if calc_in.net_weight > calc_in.gross_weight:
-                    raise HTTPException(
-                        status_code=400,
-                        detail="Net weight cannot exceed gross weight"
-                    )
                 
                 # Use calculation service
                 calc_result = CalculationService.calculate_selling(
-                    net_weight=Decimal(str(calc_in.net_weight)),
+                    net_weight=Decimal(str(calc_in.gross_weight)),
                     metal_rate=Decimal(str(calc_in.applied_rate)),
+                    touch_purity=Decimal(str(calc_in.tanch_percentage)),
+                    wastage=Decimal(str(calc_in.wastage)),
                     making_rate=Decimal(str(calc_in.making_charges_amount)),
                     making_type='FIXED',
                     hallmark=Decimal('0'),
-                    other=Decimal('0'),
-                    discount=Decimal('0'),
+                    other=Decimal(str(calc_in.other_charges)),
+                    discount=Decimal(str(calc_in.discount)),
                     gst_rate=Decimal('3')
-                )
-                
-                # Calculate tanch percentage
-                pure_weight = calc_in.net_weight
-                tanch_percentage = (
-                    (pure_weight / calc_in.gross_weight * 100.0) if calc_in.gross_weight else 0.0
                 )
                 
                 db_silver = SilverCalculation(
@@ -184,9 +177,12 @@ def create_invoice(
                     metal_rate_id=calc_in.metal_rate_id,
                     applied_rate=calc_in.applied_rate,
                     gross_weight=calc_in.gross_weight,
-                    tanch_percentage=tanch_percentage,
-                    pure_weight=pure_weight,
+                    tanch_percentage=calc_in.tanch_percentage,
+                    wastage=calc_in.wastage,
+                    pure_weight=float(calc_result['fine_weight']),
                     making_charges_amount=float(calc_result['making_charge']),
+                    other_charges=calc_in.other_charges,
+                    discount=calc_in.discount,
                     total_silver_value=float(calc_result['metal_value'])
                 )
                 db.add(db_silver)

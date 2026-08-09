@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { axiosClient } from '../../api/axiosClient';
 import { generateInvoicePDF } from '../../utils/invoicePdfUtils';
-import { generatePremiumHTML } from '../../utils/premiumInvoiceHtml';
+import { generateInvoiceHtml } from '../../utils/invoicePdfUtils';
 import {
   Search,
   Filter,
@@ -127,16 +127,15 @@ export default function InvoiceHistory() {
       const res = await axiosClient.get(getPdfEndpoint(invoice));
       const printWindow = window.open('', '_blank');
       if (printWindow) {
-        let qrDataUrl = '';
         try {
           const QRCode = (await import('qrcode')).default;
           const qrData = `${res.data.invoice?.invoice_number}|${res.data.totals?.grand_total}`;
-          qrDataUrl = await QRCode.toDataURL(qrData, { width: 60, margin: 0 });
+          await QRCode.toDataURL(qrData, { width: 60, margin: 0 });
         } catch (e) {
           console.warn('Failed to generate QR for print');
         }
         
-        printWindow.document.write(generatePremiumHTML(res.data, qrDataUrl));
+        printWindow.document.write(await generateInvoiceHtml(res.data));
         printWindow.document.close();
         printWindow.focus();
         setTimeout(() => {

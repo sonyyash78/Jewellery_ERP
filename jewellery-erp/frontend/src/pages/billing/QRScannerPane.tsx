@@ -100,16 +100,22 @@ export default function QRScannerPane() {
 
       const taxableAmount = metalValue + makingAmount + hallmark + otherCharges - discount;
 
+      const touchDisplay = item.tanch || (isGold ? (item.purity === '22K' ? 91.6 : 75) : 65);
+      const wastageDisplay = 0; // Usually stock items don't have predefined wastage
+      const fineWeight = item.net_weight * (touchDisplay / 100);
+
       const billItem: BillItem = {
         id: item.item_code, // Use item_code as unique cart ID
         stockItemId: item.id,
         itemType: isGold ? 'Gold' : 'Silver',
         itemName: item.item_name,
-        purityDisplay: item.purity || 'N/A',
-        touchDisplay: item.tanch || 0,
-        grossWeight: item.gross_weight,
-        stoneWeight: item.stone_weight,
+        purityDisplay: item.purity || (isGold ? '22K' : 'Custom'),
+        touchDisplay,
+        wastageDisplay,
+        grossWeight: item.gross_weight || item.net_weight,
+        stoneWeight: item.stone_weight || 0,
         netWeight: item.net_weight,
+        fineWeight,
         rateDisplay: metalRate,
         metalValue,
         makingAmount,

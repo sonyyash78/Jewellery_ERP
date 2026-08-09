@@ -13,17 +13,17 @@ export default function LiveBillSummary() {
   // To hold the prepared payload for CheckoutModal
   const [checkoutPayload, setCheckoutPayload] = useState<any>(null);
 
-  const totalGross = cart.reduce((sum, item) => sum + item.grossWeight, 0);
-  const totalStone = cart.reduce((sum, item) => sum + item.stoneWeight, 0);
-  const totalNet = cart.reduce((sum, item) => sum + item.netWeight, 0);
-  const totalMetal = cart.reduce((sum, item) => sum + item.metalValue, 0);
-  const totalMaking = cart.reduce((sum, item) => sum + item.makingAmount, 0);
-  const totalHallmark = cart.reduce((sum, item) => sum + item.hallmark, 0);
-  const totalOther = cart.reduce((sum, item) => sum + item.otherCharges, 0);
+  const totalGross = cart.reduce((sum, item) => sum + (item.grossWeight || 0), 0);
+  const totalStone = cart.reduce((sum, item) => sum + (item.stoneWeight || 0), 0);
+  const totalNet = cart.reduce((sum, item) => sum + (item.netWeight || 0), 0);
+  const totalMetal = cart.reduce((sum, item) => sum + (item.metalValue || 0), 0);
+  const totalMaking = cart.reduce((sum, item) => sum + (item.makingAmount || 0), 0);
+  const totalHallmark = cart.reduce((sum, item) => sum + (item.hallmark || 0), 0);
+  const totalOther = cart.reduce((sum, item) => sum + (item.otherCharges || 0), 0);
   // const totalItemDiscount = cart.reduce((sum, item) => sum + item.discount, 0);
   // const totalDiscount = totalItemDiscount + globalDiscount;
   
-  const baseTaxableAmount = cart.reduce((sum, item) => sum + item.taxableAmount, 0);
+  const baseTaxableAmount = cart.reduce((sum, item) => sum + (item.taxableAmount || 0), 0);
   const taxableAmount = Math.max(0, baseTaxableAmount - globalDiscount);
   
   let cgst = 0, sgst = 0, igst = 0;
@@ -64,6 +64,9 @@ export default function LiveBillSummary() {
           gross_weight: item.grossWeight,
           stone_weight: item.stoneWeight,
           net_weight: item.netWeight,
+          touch_purity: item.touchDisplay,
+          wastage: item.wastageDisplay,
+          fine_weight: item.fineWeight,
           making_charge_type: item.rawGold?.makingChargeType || 'flat',
           making_charge_rate: item.rawGold?.makingChargeValue || 0,
           making_charges_amount: item.makingAmount,
@@ -75,6 +78,9 @@ export default function LiveBillSummary() {
           applied_rate: item.rateDisplay,
           gross_weight: item.grossWeight,
           net_weight: item.netWeight,
+          tanch_percentage: item.touchDisplay,
+          wastage: item.wastageDisplay,
+          pure_weight: item.fineWeight,
           making_charge_type: item.rawSilver?.makingChargeType || 'flat',
           making_charge_rate: item.rawSilver?.makingChargeValue || 0,
           making_charges_amount: item.makingAmount,
