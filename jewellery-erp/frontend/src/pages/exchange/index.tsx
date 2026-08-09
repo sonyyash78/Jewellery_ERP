@@ -59,7 +59,7 @@ export default function ExchangeModule() {
     <div className="h-[calc(100vh-6rem)] flex flex-col space-y-4 overflow-hidden">
       
       {/* Top Bar Customer Select */}
-      <div className="bg-surface border border-gray-800 rounded-xl p-4 shadow-lg flex justify-between items-center z-10">
+      <div className="bg-surface border border-gray-800 rounded-xl p-4 shadow-lg flex justify-between items-center z-10 shrink-0">
         <div>
           <label className="text-xs font-bold text-gray-500 uppercase mr-3">Customer</label>
           <select 
@@ -76,145 +76,106 @@ export default function ExchangeModule() {
         <div className="text-primary font-bold tracking-widest uppercase">Exchange Module</div>
       </div>
 
-      <div className="flex-1 flex gap-4 min-h-0">
-        {/* Left Column - Old Items Intake */}
-        <div className="flex-[5] flex flex-col gap-4 overflow-hidden">
-          <OldItemsForm />
-          
-          <div className="flex-1 bg-surface border border-gray-800 rounded-xl shadow-lg flex flex-col overflow-hidden">
-            <div className="p-3 border-b border-gray-800 bg-black/40"><h3 className="font-bold text-sm uppercase text-gray-400">Old Items Traded In</h3></div>
-            <div className="flex-1 overflow-auto custom-scrollbar">
-              <table className="w-full text-left text-sm text-textMuted">
-                <thead className="bg-background sticky top-0 border-b border-gray-800 text-xs">
-                  <tr>
-                    <th className="py-2 px-3">Item</th>
-                    <th className="py-2 px-3">Net Wt</th>
-                    <th className="py-2 px-3">Tanch</th>
-                    <th className="py-2 px-3">Rate</th>
-                    <th className="py-2 px-3 text-right text-green-400">Value (₹)</th>
-                    <th className="py-2 px-3"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-800/50">
-                  {oldItems.map(item => (
-                    <tr key={item.id} className="hover:bg-gray-800/30">
-                      <td className="py-2 px-3 font-bold text-textMain">{item.itemName}</td>
-                      <td className="py-2 px-3">{item.netWeight}g</td>
-                      <td className="py-2 px-3">{item.touch}%</td>
-                      <td className="py-2 px-3">₹ {item.rateApplied}</td>
-                      <td className="py-2 px-3 text-right font-mono text-green-400">{item.calculatedValue.toLocaleString(undefined, {maximumFractionDigits:2})}</td>
-                      <td className="py-2 px-3 text-right flex justify-end gap-2">
-                        <button onClick={() => setEditingOldItem(item)} className="text-gray-400 hover:text-blue-400"><Edit2 size={14}/></button>
-                        <button onClick={() => removeOldItem(item.id)} className="text-red-400 hover:text-red-300"><Trash2 size={14}/></button>
-                      </td>
-                    </tr>
-                  ))}
-                  {oldItems.length === 0 && <tr><td colSpan={5} className="text-center py-4 text-xs italic">No old items</td></tr>}
-                </tbody>
-              </table>
-            </div>
-            <div className="p-3 border-t border-gray-800 bg-black/40 flex justify-between font-bold text-green-400">
-              <span>Total Old Value</span>
-              <span>₹ {totalOldValue.toLocaleString(undefined, {maximumFractionDigits:2})}</span>
-            </div>
-          </div>
+      <div className="flex-1 flex gap-4 overflow-hidden">
+        {/* Left Column: Calculators */}
+        <div className="flex-[3] flex gap-4 overflow-y-auto custom-scrollbar">
+          <div className="flex-1"><OldItemsForm /></div>
+          <div className="flex-1"><NewItemScanner /></div>
         </div>
 
-        {/* Middle Column - New Items Purchase */}
-        <div className="flex-[4] flex flex-col gap-4 overflow-hidden">
-          <NewItemScanner />
-          
-          <div className="flex-1 bg-surface border border-gray-800 rounded-xl shadow-lg flex flex-col overflow-hidden">
-            <div className="p-3 border-b border-gray-800 bg-black/40"><h3 className="font-bold text-sm uppercase text-gray-400">New Items Purchased</h3></div>
-            <div className="flex-1 overflow-auto custom-scrollbar">
-              <table className="w-full text-left text-sm text-textMuted">
-                <thead className="bg-background sticky top-0 border-b border-gray-800 text-xs">
-                  <tr>
-                    <th className="py-2 px-3">Item</th>
-                    <th className="py-2 px-3">Net Wt</th>
-                    <th className="py-2 px-3">Rate</th>
-                    <th className="py-2 px-3">Making</th>
-                    <th className="py-2 px-3">Other</th>
-                    <th className="py-2 px-3 text-right text-red-400">Total (₹)</th>
-                    <th className="py-2 px-3"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-800/50">
-                  {newItems.map(item => (
-                    <tr key={item.stockItemId} className="hover:bg-gray-800/30 text-[11px]">
-                      <td className="py-2 px-3 font-bold text-textMain">{item.itemName}</td>
-                      <td className="py-2 px-3">{item.netWeight}g</td>
-                      <td className="py-2 px-3">₹ {item.rateApplied}</td>
-                      <td className="py-2 px-3">₹ {item.makingCharges.toLocaleString()}</td>
-                      <td className="py-2 px-3">₹ {(item.hallmark + item.otherCharges).toLocaleString()}</td>
-                      <td className="py-2 px-3 text-right font-mono text-red-400 text-sm font-bold">{item.finalPrice.toLocaleString()}</td>
-                      <td className="py-2 px-3 text-right">
-                        <button onClick={() => removeNewItem(item.stockItemId)} className="text-red-400 hover:text-red-300"><Trash2 size={14}/></button>
-                      </td>
-                    </tr>
-                  ))}
-                  {newItems.length === 0 && <tr><td colSpan={4} className="text-center py-4 text-xs italic">No new items</td></tr>}
-                </tbody>
-              </table>
-            </div>
-            <div className="p-3 border-t border-gray-800 bg-black/40 flex justify-between font-bold text-red-400">
-              <span>Total New Price (Ex. Tax)</span>
-              <span>₹ {totalNewValue.toLocaleString(undefined, {maximumFractionDigits:2})}</span>
-            </div>
+        {/* Right Column: Receipt Summary */}
+        <div className="flex-[2] bg-surface border border-primary/30 rounded-xl shadow-lg flex flex-col overflow-hidden">
+          <div className="bg-background border-b border-gray-800 p-4 flex justify-between items-center">
+            <h2 className="text-lg font-bold text-primary flex items-center gap-2 uppercase tracking-widest">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+              Exchange Summary
+            </h2>
+            <span className="text-xs font-mono bg-primary/10 text-primary px-2 py-1 rounded">ITEMS: {oldItems.length + newItems.length}</span>
           </div>
-        </div>
 
-        {/* Right Column - Final Settlement */}
-        <div className="flex-[3] bg-surface border border-gray-800 rounded-xl shadow-lg p-6 flex flex-col z-0">
-          <h2 className="text-primary font-bold uppercase tracking-widest mb-6 pb-4 border-b border-gray-800">Final Settlement</h2>
-          
-          <div className="space-y-4 flex-1">
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-400 font-bold uppercase">Total New Value</span>
-              <span className="font-mono text-red-400">₹ {totalNewValue.toLocaleString(undefined, {maximumFractionDigits:2})}</span>
-            </div>
-            <div className="flex flex-col gap-2 pt-2 border-t border-gray-800 mb-2">
-              <span className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">GST Type</span>
+          <div className="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-3">
+            {oldItems.length === 0 && newItems.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-textMuted text-sm italic">No items added yet</div>
+            ) : (
+              <>
+                {oldItems.map(item => (
+                  <div key={`old-${item.id}`} className="bg-background border border-gray-800 rounded p-3 relative group">
+                    <div className="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => setEditingOldItem(item)} className="text-gray-600 hover:text-blue-400 transition-colors"><Edit2 size={16} /></button>
+                      <button onClick={() => removeOldItem(item.id)} className="text-gray-600 hover:text-red-400 transition-colors"><Trash2 size={16} /></button>
+                    </div>
+                    <div className="flex justify-between items-start mb-2 pr-12">
+                      <div>
+                        <span className="text-xs font-bold px-1.5 py-0.5 rounded mr-2 bg-green-500/20 text-green-400">OLD (IN)</span>
+                        <span className="text-sm text-textMain font-medium">{item.itemName}</span>
+                      </div>
+                      <span className="text-sm font-mono text-green-400">- ₹{item.calculatedValue.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-textMuted">
+                      <div className="flex justify-between"><span>Net Wt:</span><span className="font-mono">{item.netWeight}g</span></div>
+                      <div className="flex justify-between"><span>Tanch:</span><span className="font-mono">{item.touch}%</span></div>
+                      <div className="flex justify-between"><span>Fine:</span><span className="font-mono text-primary">{item.fineWeight.toFixed(3)}g</span></div>
+                      <div className="flex justify-between"><span>Rate:</span><span className="font-mono">₹{item.rateApplied}</span></div>
+                    </div>
+                  </div>
+                ))}
+                
+                {newItems.map(item => (
+                  <div key={`new-${item.stockItemId}`} className="bg-background border border-gray-800 rounded p-3 relative group">
+                    <div className="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => removeNewItem(item.stockItemId)} className="text-gray-600 hover:text-red-400 transition-colors"><Trash2 size={16} /></button>
+                    </div>
+                    <div className="flex justify-between items-start mb-2 pr-12">
+                      <div>
+                        <span className="text-xs font-bold px-1.5 py-0.5 rounded mr-2 bg-primary/20 text-primary">NEW (OUT)</span>
+                        <span className="text-sm text-textMain font-medium">{item.itemName}</span>
+                      </div>
+                      <span className="text-sm font-mono text-red-400">+ ₹{item.finalPrice.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-textMuted">
+                      <div className="flex justify-between"><span>Net Wt:</span><span className="font-mono">{item.netWeight}g</span></div>
+                      <div className="flex justify-between"><span>Making:</span><span className="font-mono">₹{item.makingCharges.toLocaleString()}</span></div>
+                      <div className="flex justify-between"><span>Other:</span><span className="font-mono">₹{(item.hallmark + item.otherCharges).toLocaleString()}</span></div>
+                      <div className="flex justify-between"><span>Rate:</span><span className="font-mono">₹{item.rateApplied}</span></div>
+                    </div>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+
+          <div className="bg-background border-t border-gray-800 p-4">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-sm text-textMuted">GST Type</span>
               <div className="flex gap-2">
-                <button onClick={() => setGstState('same_state')} className={`flex-1 py-1 rounded text-xs font-bold transition-colors ${gstState === 'same_state' ? 'bg-primary text-black' : 'bg-gray-800 text-gray-400'}`}>Same State</button>
-                <button onClick={() => setGstState('different_state')} className={`flex-1 py-1 rounded text-xs font-bold transition-colors ${gstState === 'different_state' ? 'bg-primary text-black' : 'bg-gray-800 text-gray-400'}`}>Interstate</button>
-                <button onClick={() => setGstState('none')} className={`flex-1 py-1 rounded text-xs font-bold transition-colors ${gstState === 'none' ? 'bg-primary text-black' : 'bg-gray-800 text-gray-400'}`}>No GST</button>
+                <button onClick={() => setGstState('same_state')} className={`px-2 py-1 rounded text-xs font-bold transition-colors ${gstState === 'same_state' ? 'bg-primary text-black' : 'bg-gray-800 text-gray-400'}`}>Same State</button>
+                <button onClick={() => setGstState('different_state')} className={`px-2 py-1 rounded text-xs font-bold transition-colors ${gstState === 'different_state' ? 'bg-primary text-black' : 'bg-gray-800 text-gray-400'}`}>Interstate</button>
+                <button onClick={() => setGstState('none')} className={`px-2 py-1 rounded text-xs font-bold transition-colors ${gstState === 'none' ? 'bg-primary text-black' : 'bg-gray-800 text-gray-400'}`}>No GST</button>
               </div>
             </div>
-            
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-400 font-bold uppercase">GST ({gstState === 'none' ? '0%' : '3%'})</span>
-              <span className="font-mono text-red-400">₹ {gstAmount.toLocaleString(undefined, {maximumFractionDigits:2})}</span>
-            </div>
-            <div className="flex justify-between items-center pt-2 border-t border-gray-800">
-              <span className="text-white font-bold uppercase">Grand Total (Bill)</span>
-              <span className="font-mono text-red-400 font-bold text-lg">₹ {grandTotal.toLocaleString(undefined, {maximumFractionDigits:2})}</span>
+
+            <div className="space-y-1 mb-4">
+              <div className="flex justify-between text-sm text-textMuted"><span>Total New Value</span><span className="font-mono">₹{totalNewValue.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span></div>
+              <div className="flex justify-between text-sm text-textMuted"><span>GST ({gstState === 'none' ? '0%' : '3%'})</span><span className="font-mono">₹{gstAmount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span></div>
+              <div className="flex justify-between text-sm text-textMain font-bold"><span>Grand Total (Bill)</span><span className="font-mono">₹{grandTotal.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span></div>
+              <div className="flex justify-between text-sm text-green-400"><span>Old Items Trade-In</span><span className="font-mono">- ₹{totalOldValue.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span></div>
+              
+              <div className="flex justify-between text-xl font-bold pt-2 border-t border-gray-800 mt-2 items-center">
+                <span className="text-sm uppercase text-gray-400 font-bold">{differenceAmount > 0 ? 'Customer Pays' : differenceAmount < 0 ? 'You Pay' : 'Settled'}</span>
+                <span className={`font-mono ${differenceAmount > 0 ? 'text-primary' : 'text-green-400'}`}>₹{Math.abs(differenceAmount).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</span>
+              </div>
             </div>
 
-            <div className="flex justify-between items-center mt-6 pt-6 border-t border-gray-800 text-sm">
-              <span className="text-gray-400 font-bold uppercase">Old Items Trade-In</span>
-              <span className="font-mono text-green-400 font-bold text-lg">- ₹ {totalOldValue.toLocaleString(undefined, {maximumFractionDigits:2})}</span>
-            </div>
-          </div>
-
-          <div className="mt-6 pt-6 border-t-2 border-gray-800">
-            <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 text-center">Net Amount Payable</div>
-            <div className={`text-4xl font-bold font-mono text-center mb-6 ${differenceAmount > 0 ? 'text-primary' : 'text-green-400'}`}>
-              ₹ {Math.abs(differenceAmount).toLocaleString(undefined, {maximumFractionDigits:0})}
-            </div>
-            <div className="text-center text-xs text-gray-400 mb-6 font-bold uppercase">
-              {differenceAmount > 0 ? 'Customer Pays You' : differenceAmount < 0 ? 'You Pay Customer (or Credit)' : 'Settled Even'}
-            </div>
-            
             <button 
+              disabled={oldItems.length === 0 && newItems.length === 0}
               onClick={handleProcessExchange}
-              className="w-full bg-primary hover:bg-primary-dark text-black font-bold uppercase tracking-wider py-4 rounded-xl transition-all shadow-[0_0_20px_rgba(212,175,55,0.2)] hover:shadow-[0_0_30px_rgba(212,175,55,0.4)]"
+              className="bg-primary hover:bg-primary-dark text-black font-bold py-3 rounded w-full flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
             >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
               Process Exchange
             </button>
           </div>
         </div>
-
       </div>
       
       {showCheckout && (
