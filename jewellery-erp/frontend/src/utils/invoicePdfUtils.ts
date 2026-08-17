@@ -42,7 +42,7 @@ export const generateInvoiceHtml = async (data: InvoicePDFData): Promise<string>
 
     let logoDataUrl = '';
     try {
-      const response = await fetch('http://localhost:8000/static/logo.png?v=' + Date.now(), { cache: 'no-store' });
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}/static/logo.png?v=` + Date.now(), { cache: 'no-store' });
       if (response.ok) {
         const blob = await response.blob();
         logoDataUrl = await new Promise((resolve) => {

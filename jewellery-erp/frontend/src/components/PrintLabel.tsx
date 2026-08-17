@@ -25,7 +25,7 @@ export const PrintLabel = forwardRef<HTMLDivElement, PrintLabelProps>(({ item },
       {/* Right Side: QR Code */}
       <div className="pl-4 flex flex-col items-center justify-center">
         {item.qr_code_path ? (
-          <img src={`http://localhost:8000${item.qr_code_path}`} alt="QR" className="w-24 h-24 object-contain" />
+          <img src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${item.qr_code_path}`} alt="QR" className="w-24 h-24 object-contain" />
         ) : (
           <div className="w-24 h-24 border border-gray-300 flex items-center justify-center text-xs text-gray-400 text-center">No QR</div>
         )}

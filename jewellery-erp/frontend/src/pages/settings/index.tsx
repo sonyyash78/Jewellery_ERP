@@ -118,7 +118,7 @@ export default function SettingsModule() {
               <h3 className="text-sm font-bold text-primary uppercase mb-4">Shop Logo</h3>
               <div className="flex items-center gap-6">
                 <div className="w-24 h-24 bg-gray-900 border border-gray-700 rounded-lg flex items-center justify-center overflow-hidden">
-                  <img src={`http://localhost:8000/static/logo.png?v=${Date.now()}`} alt="Logo" className="max-w-full max-h-full object-contain" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                  <img src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}/static/logo.png?v=${Date.now()}`} alt="Logo" className="max-w-full max-h-full object-contain" onError={(e) => (e.currentTarget.style.display = 'none')} />
                 </div>
                 <div className="flex-1">
                   <input type="file" accept="image/png, image/jpeg" onChange={(e) => setLogoFile(e.target.files?.[0] || null)} className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-black hover:file:bg-primary-dark mb-4" />

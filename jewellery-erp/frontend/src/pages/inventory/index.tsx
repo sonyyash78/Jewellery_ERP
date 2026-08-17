@@ -19,7 +19,7 @@ const InventoryTableRow = ({ item, onDelete, onDownload }: { item: StockItem, on
     <tr className="hover:bg-gray-800/30 transition-colors">
       <td className="py-2 px-4">
         {item.qr_code_path ? (
-          <img src={`http://localhost:8000${item.qr_code_path}`} alt="QR" className="w-12 h-12 bg-white p-0.5 rounded object-contain" />
+          <img src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${item.qr_code_path}`} alt="QR" className="w-12 h-12 bg-white p-0.5 rounded object-contain" />
         ) : <span className="text-xs text-gray-600">N/A</span>}
       </td>
       <td className="py-3 px-4 font-mono font-bold text-gray-300">{item.item_code}</td>
@@ -112,7 +112,7 @@ export default function Inventory() {
   const handleDownloadQR = async (path: string, itemCode: string) => {
     if (!path) return;
     try {
-      const response = await fetch(`http://localhost:8000${path}`);
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${path}`);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
