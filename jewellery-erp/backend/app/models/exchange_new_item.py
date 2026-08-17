@@ -1,3 +1,4 @@
+from typing import Optional
 from sqlalchemy import Integer, DECIMAL, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base_class import Base

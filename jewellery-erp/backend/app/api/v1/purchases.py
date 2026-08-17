@@ -69,6 +69,8 @@ def create_unified_purchase(
     db.flush()
     
     # Process each item
+    total_gold_credit = 0.0
+    total_silver_credit = 0.0
     for item_in in purchase_in.items:
         # Create item with values from frontend
         db_item = PurchaseItem(
@@ -92,9 +94,16 @@ def create_unified_purchase(
             taxable_amount=item_in.taxable_amount
         )
         db.add(db_item)
+        
+        if item_in.metal_type.lower() == 'gold':
+            total_gold_credit += float(item_in.fine_weight)
+        elif item_in.metal_type.lower() == 'silver':
+            total_silver_credit += float(item_in.fine_weight)
     
     # Update seller outstanding balance (We owe them)
     seller.outstanding_balance = float(seller.outstanding_balance or 0) + float(purchase_in.grand_total)
+    seller.fine_gold_balance = float(seller.fine_gold_balance or 0) + total_gold_credit
+    seller.fine_silver_balance = float(seller.fine_silver_balance or 0) + total_silver_credit
     
     # Create supplier ledger entry for the purchase
     from app.models.supplier_ledger import SupplierLedger
@@ -105,7 +114,11 @@ def create_unified_purchase(
         description=f"Purchase {db_purchase.purchase_number}",
         debit=0,
         credit=float(purchase_in.grand_total),
-        balance=seller.outstanding_balance
+        balance=seller.outstanding_balance,
+        gold_credit=total_gold_credit,
+        gold_balance=seller.fine_gold_balance,
+        silver_credit=total_silver_credit,
+        silver_balance=seller.fine_silver_balance
     )
     db.add(ledger_entry)
     
@@ -120,7 +133,9 @@ def create_unified_purchase(
             description=f"Payment for Purchase {db_purchase.purchase_number}",
             debit=amount_paid,
             credit=0,
-            balance=seller.outstanding_balance
+            balance=seller.outstanding_balance,
+            gold_balance=seller.fine_gold_balance,
+            silver_balance=seller.fine_silver_balance
         )
         db.add(payment_entry)
     

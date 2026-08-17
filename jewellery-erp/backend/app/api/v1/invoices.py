@@ -82,6 +82,9 @@ def create_invoice(
         db.flush() # Get ID
         
         # 4. Create Items
+        total_fine_gold = 0.0
+        total_fine_silver = 0.0
+        
         for item_in in invoice_in.items:
             db_item = InvoiceItem(
                 invoice_id=db_invoice.id,
@@ -148,6 +151,12 @@ def create_invoice(
                 )
                 db.add(db_gold)
                 
+                if calc_in.applied_rate == 0:
+                    if item_in.item_name and "deposit" in item_in.item_name.lower():
+                        total_fine_gold -= float(calc_result['fine_weight'])
+                    else:
+                        total_fine_gold += float(calc_result['fine_weight'])
+                
             elif item_in.silver_calculation:
                 calc_in = item_in.silver_calculation
                 
@@ -186,6 +195,12 @@ def create_invoice(
                     total_silver_value=float(calc_result['metal_value'])
                 )
                 db.add(db_silver)
+                
+                if calc_in.applied_rate == 0:
+                    if item_in.item_name and "deposit" in item_in.item_name.lower():
+                        total_fine_silver -= float(calc_result['fine_weight'])
+                    else:
+                        total_fine_silver += float(calc_result['fine_weight'])
             
             # 6. Mark StockItem as Sold if this was a scanned item
             if hasattr(item_in, 'stock_item_id') and item_in.stock_item_id:
@@ -201,6 +216,9 @@ def create_invoice(
         if invoice_in.customer_id and customer:
             amount_paid = float(invoice_in.amount_paid) if invoice_in.amount_paid is not None else float(db_invoice.grand_total)
             
+            customer.fine_gold_balance = float(customer.fine_gold_balance or 0) + total_fine_gold
+            customer.fine_silver_balance = float(customer.fine_silver_balance or 0) + total_fine_silver
+            
             # Debit entry for the bill
             ledger_debit = CustomerLedger(
                 customer_id=customer.id,
@@ -209,7 +227,11 @@ def create_invoice(
                 description=f'Sales Bill {db_invoice.invoice_number}',
                 debit=float(db_invoice.grand_total),
                 credit=0.0,
-                balance=float(customer.outstanding_balance or 0) + float(db_invoice.grand_total)
+                balance=float(customer.outstanding_balance or 0) + float(db_invoice.grand_total),
+                gold_debit=total_fine_gold,
+                gold_balance=customer.fine_gold_balance,
+                silver_debit=total_fine_silver,
+                silver_balance=customer.fine_silver_balance
             )
             customer.outstanding_balance = ledger_debit.balance
             db.add(ledger_debit)
@@ -223,7 +245,9 @@ def create_invoice(
                     description=f'Payment for {db_invoice.invoice_number}',
                     debit=0.0,
                     credit=amount_paid,
-                    balance=float(customer.outstanding_balance) - amount_paid
+                    balance=float(customer.outstanding_balance) - amount_paid,
+                    gold_balance=customer.fine_gold_balance,
+                    silver_balance=customer.fine_silver_balance
                 )
                 customer.outstanding_balance = ledger_credit.balance
                 db.add(ledger_credit)

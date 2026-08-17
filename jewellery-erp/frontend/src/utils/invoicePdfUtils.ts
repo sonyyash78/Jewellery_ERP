@@ -227,23 +227,42 @@ export const generateInvoicePDF = async (data: InvoicePDFData) => {
     renderContainer.style.position = 'fixed';
     renderContainer.style.top = '0';
     renderContainer.style.left = '0';
-    renderContainer.style.width = '100vw';
-    renderContainer.style.height = '100vh';
+    renderContainer.style.width = '210mm'; // Fixed A4 width for exact measurement
+    renderContainer.style.height = '297mm'; // Fixed A4 height
     renderContainer.style.overflow = 'hidden';
     renderContainer.style.zIndex = '-9999';
     renderContainer.style.opacity = '0';
     renderContainer.innerHTML = finalRenderedHtml;
     document.body.appendChild(renderContainer);
 
+    // Scripts injected via innerHTML don't run, so we apply the 1-page auto-scale logic directly here.
+    const wrapper = renderContainer.querySelector('.invoice-wrapper') as HTMLElement;
+    const content = renderContainer.querySelector('.content') as HTMLElement;
+    
+    if (wrapper && content) {
+      // Calculate how much content overflows the A4 page height (approx 1122px)
+      const maxH = wrapper.clientHeight || 1122; 
+      const contentH = content.scrollHeight;
+      
+      if (contentH > maxH) {
+         // Scale down to fit one page precisely
+         const scale = maxH / contentH;
+         content.style.transform = `scale(${scale})`;
+         content.style.transformOrigin = 'top center';
+         // Adjust height so the wrapper knows the scaled content fits
+         content.style.height = `${contentH}px`;
+      }
+    }
+
     await new Promise(resolve => setTimeout(resolve, 800)); // wait for fonts
 
     const opt: any = {
-      margin:       0, // We handle margins in CSS
+      margin:       0,
       filename:     `${data.invoice?.invoice_number || 'INVOICE'}.pdf`,
       image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+      html2canvas:  { scale: 2, useCORS: true, letterRendering: true, windowWidth: 794 }, // 794px ~ 210mm
       jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak:    { mode: ['css', 'legacy'] }
+      pagebreak:    { mode: 'avoid-all' } // Force into a single page
     };
 
     const targetElement = renderContainer.querySelector('.pdf-container');

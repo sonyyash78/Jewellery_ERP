@@ -41,15 +41,13 @@ export const getCommonStyles = () => `
 
     .invoice-wrapper {
       width: 210mm;
-      height: 297mm;
+      height: 296.5mm; /* slightly less than 297mm to prevent jsPDF rounding bleed */
       background: white;
       position: relative;
       padding: 8mm 5mm 8mm 5mm;
       box-sizing: border-box;
       overflow: hidden;
-      border: 1px solid #f0f0f0;
-      page-break-after: always;
-      page-break-inside: avoid;
+      /* removed page-break-after to fix blank 2nd page */
     }
 
     /* Rest of the CSS styles from previous premiumInvoiceHtml.ts... */

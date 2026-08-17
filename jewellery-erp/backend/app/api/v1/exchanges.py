@@ -48,14 +48,23 @@ def create_exchange(
     db.flush() # get ID
 
     # Add old items
+    gold_credit = 0.0
+    silver_credit = 0.0
     for old_item_in in exchange_in.old_items:
         db_old_item = ExchangeItem(
             exchange_id=exchange.id,
             **old_item_in.model_dump()
         )
         db.add(db_old_item)
+        
+        if old_item_in.metal.lower() == 'gold':
+            gold_credit += float(old_item_in.fine_weight)
+        elif old_item_in.metal.lower() == 'silver':
+            silver_credit += float(old_item_in.fine_weight)
 
     # Add new items & update stock status only for inventory items
+    gold_debit = 0.0
+    silver_debit = 0.0
     for new_item_in in exchange_in.new_items:
         db_new_item = ExchangeNewItem(
             exchange_id=exchange.id,
@@ -63,14 +72,22 @@ def create_exchange(
         )
         db.add(db_new_item)
         
+        if new_item_in.metal.lower() == 'gold':
+            gold_debit += float(new_item_in.fine_weight)
+        elif new_item_in.metal.lower() == 'silver':
+            silver_debit += float(new_item_in.fine_weight)
+        
         # Mark stock item as sold only if this is an inventory item
         if new_item_in.stock_item_id is not None:
             stock = next((s for s in stock_items if s.id == new_item_in.stock_item_id), None)
             if stock:
                 stock.status = "Sold"
 
+    customer.fine_gold_balance = float(customer.fine_gold_balance or 0) + gold_debit - gold_credit
+    customer.fine_silver_balance = float(customer.fine_silver_balance or 0) + silver_debit - silver_credit
+
     # Update Customer Ledger for the difference
-    if exchange.difference_amount != 0:
+    if exchange.difference_amount != 0 or gold_debit != 0 or gold_credit != 0 or silver_debit != 0 or silver_credit != 0:
         debit = exchange.difference_amount if exchange.difference_amount > 0 else 0
         credit = abs(exchange.difference_amount) if exchange.difference_amount < 0 else 0
         
@@ -83,7 +100,13 @@ def create_exchange(
             description="Exchange Difference Settlement",
             debit=debit,
             credit=credit,
-            balance=customer.outstanding_balance
+            balance=customer.outstanding_balance,
+            gold_debit=gold_debit,
+            gold_credit=gold_credit,
+            gold_balance=customer.fine_gold_balance,
+            silver_debit=silver_debit,
+            silver_credit=silver_credit,
+            silver_balance=customer.fine_silver_balance
         )
         db.add(ledger)
 
@@ -102,7 +125,9 @@ def create_exchange(
             description=f"Payment for Exchange EXC-{exchange.id}",
             debit=pmt_debit,
             credit=pmt_credit,
-            balance=customer.outstanding_balance
+            balance=customer.outstanding_balance,
+            gold_balance=customer.fine_gold_balance,
+            silver_balance=customer.fine_silver_balance
         )
         db.add(pmt_ledger)
 
